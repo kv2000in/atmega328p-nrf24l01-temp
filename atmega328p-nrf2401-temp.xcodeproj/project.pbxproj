@@ -9,12 +9,16 @@
 /* Begin PBXFileReference section */
 		2A9C7D6125AA8ACF0051B1A0 /* LCD16x2-temp-NRF24l01-v1.5 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "LCD16x2-temp-NRF24l01-v1.5"; sourceTree = "<group>"; };
 		2A9C7D6225AA8B1A0051B1A0 /* sensor-node-sends-q8s-T-powersave-barebone-atmega-3.3vreg-offv6 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "sensor-node-sends-q8s-T-powersave-barebone-atmega-3.3vreg-offv6"; sourceTree = "<group>"; };
+		2A9C7D6525AFED160051B1A0 /* SimpleRx */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SimpleRx; sourceTree = "<group>"; };
+		2A9C7D6625AFED160051B1A0 /* SimpleTx */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SimpleTx; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		2A9C7D5A25AA8A770051B1A0 = {
 			isa = PBXGroup;
 			children = (
+				2A9C7D6525AFED160051B1A0 /* SimpleRx */,
+				2A9C7D6625AFED160051B1A0 /* SimpleTx */,
 				2A9C7D6225AA8B1A0051B1A0 /* sensor-node-sends-q8s-T-powersave-barebone-atmega-3.3vreg-offv6 */,
 				2A9C7D6125AA8ACF0051B1A0 /* LCD16x2-temp-NRF24l01-v1.5 */,
 			);

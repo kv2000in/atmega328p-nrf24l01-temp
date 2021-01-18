@@ -389,16 +389,17 @@ RF24 radio(9,10);
 // Radio pipe addresses for the 2 nodes to communicate.
 //const uint64_t pipes[2] = { 0xC2C2C2C2C2C3LL, 0xE7E7E7E7E7E7LL }; //WORKING if base is sending to just one address E7
 //If planning on using more than two sending nodes - remember to activate more than 2 receving pipes on the receiver.
-const uint64_t pipes[2] = { 0xC2C2C2C2C2C2LL, 0xF0F0F0F0F0F0LL }; // for sending node #1
+//const uint64_t pipes[1] = {0xF0F0F0F0F0LL }; // for sending node #1
+const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
 //const uint64_t pipes[2] = { 0xC2C2C2C2C2C3LL, 0xF0F0F0F0F0F0LL }; //for sending node #2
-
+//const byte slaveAddress[5] = {'R','x','A','A','A'};
 
 void setup(void)
 {
   
    pinMode(DigitalSwitchTemp,OUTPUT);
   pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
-Serial.begin(57600);
+Serial.begin(9600);
 //Call printf_begin() for printf to work/
 printf_begin();
  // printf("\n\rRF24/examples/GettingStarted/\n\r");
@@ -412,8 +413,6 @@ printf_begin();
 
  
 
-
-//radio.printDetails();
 //radio.startListening();
 //delay (500);
  //Remove for further powersaveing
@@ -487,10 +486,10 @@ void senddata(){
   //radio.setDataRate(RF24_250KBPS);
   //radio.setPALevel(RF24_PA_MAX);
 //Disabling AutoACK gives more reliable results
-radio.setAutoAck(0);
-radio.openWritingPipe(pipes[1]);
-//radio.openReadingPipe(1, pipes[0]);
-
+radio.setAutoAck(1);
+radio.openWritingPipe(pipes[0]);
+radio.openReadingPipe(1, pipes[1]);
+//radio.openWritingPipe(slaveAddress);
 radio.startListening();
 radio.stopListening();
 delay (10);
@@ -552,8 +551,8 @@ float temp;
     //  printf("ok...");
     //else
     //  printf("failed.\n\r");
- 
-//delay(20);
+radio.printPrettyDetails();
+delay(20);
 
  
  bool okT = radio.write( &datastr, 16);

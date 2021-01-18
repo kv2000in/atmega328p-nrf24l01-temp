@@ -70,8 +70,8 @@ LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
 RF24 radio(9,10);
 
 // Radio pipe addresses for the 2 nodes to communicate.              
-const uint64_t pipes[2] = { 0xC2C2C2C2C2LL, 0xF0F0F0F0F0LL };
-
+const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
+//const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
 float Thermistor(int RawADC) {
  // [Ground] -- [10k-pad-resistor] -- | -- [thermistor] --[Vcc (5 or 3.3v)]
  //                                   |
@@ -94,7 +94,7 @@ void setup() {
   lcd.begin(16, 2);
   // Print a message to the LCD.
   //lcd.print("hello, world!");
-  Serial.begin(57600);
+  Serial.begin(9600);
   //printf is needed for radio to print details
   printf_begin();
   
@@ -110,14 +110,14 @@ void setup() {
   radio.setDataRate(RF24_2MBPS);
   //radio.setDataRate(RF24_250KBPS);
   //radio.setPALevel(RF24_PA_MAX);
-radio.setAutoAck(0);
-//radio.openWritingPipe(pipes[0]);
-radio.openReadingPipe(1, pipes[1]);
-
+radio.setAutoAck(1);
+radio.openWritingPipe(pipes[1]);
+radio.openReadingPipe(1, pipes[0]);
+//radio.openReadingPipe(1, thisSlaveAddress);
 radio.startListening();
 radio.stopListening();
 delay (10);
-radio.printDetails();
+radio.printPrettyDetails();
 radio.startListening();
  //Fill the placeholder chars with blanks - until data is received
 memcpy(vcc,blankvcc,5);
@@ -219,7 +219,7 @@ Serial.println("OUT = "+String(tempOUT)+" degC"); //tempOUT just to test
 toggle_2nd_row=true;
 
 lcd.print("Out V = "+String(vcc)+" mv");
-Serial.println("Out V = "+String(vcc)+" mv");
+Serial.println("OUT V = "+String(vcc)+" mv");
 
 }
 
@@ -229,6 +229,3 @@ Serial.println("Out V = "+String(vcc)+" mv");
 
 
 }
-
-
-
