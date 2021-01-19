@@ -1,43 +1,3 @@
-/*
-  LiquidCrystal Library - Hello World
-
- Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
- library works with all LCD displays that are compatible with the
- Hitachi HD44780 driver. There are many of them out there, and you
- can usually tell them by the 16-pin interface.
-
- This sketch prints "Hello World!" to the LCD
- and shows the time.
-
-  The circuit:
- * LCD RS pin to digital pin 12 - CHANGED to pin 8 
- * LCD Enable pin to digital pin 11 - CHANGED to pin 7
- * LCD D4 pin to digital pin 5
- * LCD D5 pin to digital pin 4
- * LCD D6 pin to digital pin 3
- * LCD D7 pin to digital pin 2
- * LCD R/W pin to ground
- * LCD VSS pin to ground
- * LCD VCC pin to 5V
- * 10K resistor:
- * ends to +5V and ground
- * wiper to LCD VO pin (pin 3)
-
- Library originally added 18 Apr 2008
- by David A. Mellis
- library modified 5 Jul 2009
- by Limor Fried (http://www.ladyada.net)
- example added 9 Jul 2009
- by Tom Igoe
- modified 22 Nov 2010
- by Tom Igoe
-
- This example code is in the public domain.
-
- http://www.arduino.cc/en/Tutorial/LiquidCrystal
- */
-
-// include the library code:
 #include <LiquidCrystal.h>
 #include <math.h>
 #define ThermistorPIN1 0
@@ -46,7 +6,6 @@
 #include "nRF24L01.h"
 #include "RF24.h"
 #include "printf.h"
-//SWITCHED to TMRH NRF24 Libraries - 11/16/17 OLD LIB SAVED as RF24-MASTER-MANIACBUG
 unsigned long previousScreenMillis = 0;        // will store last time LED was updated
 unsigned long previousTxMillis = 0;
 // loop delay in milli seconds
@@ -71,11 +30,7 @@ RF24 radio(9,10);
 
 // Radio pipe addresses for the 2 nodes to communicate.              
 const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
-//const byte thisSlaveAddress[5] = {'R','x','A','A','A'};
 float Thermistor(int RawADC) {
- // [Ground] -- [10k-pad-resistor] -- | -- [thermistor] --[Vcc (5 or 3.3v)]
- //                                   |
- //                                Analog Pin 6
   float pad = 9980; // Actual measured value of the 10k pad register.
   long Resistance;  
   float Temp;  // Dual-Purpose variable to save space.
@@ -92,13 +47,9 @@ float Thermistor(int RawADC) {
 void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
-  // Print a message to the LCD.
-  //lcd.print("hello, world!");
   Serial.begin(9600);
-  //printf is needed for radio to print details
   printf_begin();
-  
-   radio.begin();
+  radio.begin();
 
   // optionally, increase the delay between retries & # of retries
   radio.setRetries(15,15);
@@ -108,12 +59,9 @@ void setup() {
   radio.setPayloadSize(16);
   radio.setChannel(0x60);
   radio.setDataRate(RF24_2MBPS);
-  //radio.setDataRate(RF24_250KBPS);
-  //radio.setPALevel(RF24_PA_MAX);
 radio.setAutoAck(1);
 radio.openWritingPipe(pipes[1]);
 radio.openReadingPipe(1, pipes[0]);
-//radio.openReadingPipe(1, thisSlaveAddress);
 radio.startListening();
 radio.stopListening();
 delay (10);
@@ -127,48 +75,13 @@ memcpy(tempOUT,blanktempOUT,6);
 void loop() {
 
  
-  // print the number of seconds since reset:
-  //lcd.print(millis() / 1000);
-  
 
-   //A delay of 1000ms in the loop worked more consistently 
-    //delay(1000);
-    //radio.print_status(radio.get_status()); // need to use KVRF24.h - these are private methods - made public in my version
     if( radio.available()){
-      //printf("Got payload \r\n");       // Variable for the received timestamp
-      //while (radio.available()) {                                   // While there is data ready
-        //delay(100);
         radio.read( got_time, 16 );             // Get the payload
        previousTxMillis=millis();
-   // }
-      
-      
-    
-          //If the data is being sent as ASCII Hex - below will print out the ASCII Chars      Serial.print(got_time[0]);
-      //Serial.print(got_time[0]);//V
-      //Serial.print(got_time[1]);//1
-      //Serial.print(got_time[2]);//2
-      //Serial.print(got_time[3]);//3
-      //Serial.print(got_time[4]);//4
-      //Serial.print(got_time[5]);//t
-      //Serial.print(got_time[6]);//1
-      //Serial.print(got_time[7]);//2
-      //Serial.print(got_time[8]);//.
-      //Serial.print(got_time[9]);//2
-      //Serial.print(got_time[10]);//3
-      //Serial.print(got_time[11]);
-      //Serial.print("\r\n");
      
- memcpy(vcc,got_time+1,4);
- memcpy(tempOUT,got_time+6,5); 
-
-  // if (got_time[0]=='V'){memcpy(vcc,got_time,8);
- //Serial.println(String(vcc));
-// }
-//   else if (got_time[0]=='t'){memcpy(temp,got_time,8);
-// Serial.println(String(temp));
-// }
- 
+      memcpy(vcc,got_time+1,4);
+      memcpy(tempOUT,got_time+6,5);  
   }
 
   
@@ -184,8 +97,6 @@ if(currentTxMillis - previousTxMillis >= tx_data_interval) {
   
   
 
-  //String strVcc(vcc);
-  //String strTemp(temp);
 
     unsigned long currentScreenMillis = millis();
 if(currentScreenMillis - previousScreenMillis >= screen_refresh_interval) {
