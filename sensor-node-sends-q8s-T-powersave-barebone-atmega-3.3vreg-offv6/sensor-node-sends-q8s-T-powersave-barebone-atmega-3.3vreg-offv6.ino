@@ -53,7 +53,7 @@ ISR(WDT_vect)
 void enterSleep(void)
 {
 
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);  
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);   
   sleep_enable();
   
   /* Now enter sleep mode. */
@@ -63,6 +63,7 @@ void enterSleep(void)
   sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
+  
   power_all_enable();
 }
 
@@ -147,7 +148,7 @@ void senddata(){
  radio.stopListening();
  delay (10);
  radio.powerUp();
- delay(10);
+ delay(20);
  // VCC data
   float vcc=readVcc();
   char datastr[16]={'V'};
@@ -167,12 +168,12 @@ if (okT)
      printf("failed.\n\r"); 
 
 
- delay(10);
+ delay(20);
  
+//radio.stopListening(); //some bad nrf24l01 modules don't power down. this was suggested in forums as an alternative. still didn't work.trial and error of different radios.
+radio.powerDown(); 
 
-radio.powerDown();
-
-delay(10);
+delay(20);
 digitalWrite(DigitalSwitchReg,LOW);
 digitalWrite(DigitalSwitchTemp,LOW);
 }

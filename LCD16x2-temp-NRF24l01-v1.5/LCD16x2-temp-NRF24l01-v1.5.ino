@@ -2,6 +2,9 @@
 #include <math.h>
 #define ThermistorPIN1 0
 #define ThermistorPIN2 1
+#define MoisturePIN1 2
+#define MoisturePIN2 3
+#define MoisturePIN3 4
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
@@ -13,7 +16,7 @@ const long screen_refresh_interval = 1250;
 const long tx_data_interval=60000;
 boolean toggle_2nd_row=true;
 
-
+int i = 0;
 char tempOUT[6];//12.34 - 5 chars + 1 trailing char 
 char vcc[5];//4653
     // vcc[4]='\0'; //Add the trailing chars
@@ -71,7 +74,49 @@ radio.startListening();
 memcpy(vcc,blankvcc,5);
 memcpy(tempOUT,blanktempOUT,6);
 }
-
+void drawscreen(int whichscreenamiat){
+  if (whichscreenamiat == 0)
+        { 
+        lcd.setCursor(0, 0);
+        lcd.print("OUT = "+String(tempOUT)+" degC");
+        // set the cursor to column 0, line 1
+       // (note: line 1 is the second row, since counting begins with 0):
+         lcd.setCursor(0, 1);
+        float tempIN;
+        tempIN=Thermistor(analogRead(ThermistorPIN1));
+        lcd.print("IN1 = "+String(tempIN)+" degC");
+        
+        }
+        
+        if (whichscreenamiat == 1)
+        {
+        lcd.setCursor(0, 0);
+        lcd.print("Out V = "+String(vcc)+" mv");
+        lcd.setCursor(0, 1);
+        float tempIN=Thermistor(analogRead(ThermistorPIN2));
+        lcd.print("IN2 = "+String(tempIN)+" degC");
+        }
+        if (whichscreenamiat == 2)
+        {
+        float moist1 = analogRead(MoisturePIN1);
+        lcd.setCursor(0, 0);
+        lcd.print("M1 = "+String(moist1)+" %");
+        lcd.setCursor(0, 1);
+        moist1 = analogRead(MoisturePIN2);
+        lcd.print("M2 = "+String(moist1)+" %");
+        
+        }
+        if (whichscreenamiat == 3)
+        {
+        lcd.setCursor(0, 0);
+        lcd.print("OUT = "+String(tempOUT)+" degC");
+        lcd.setCursor(0, 1);
+        float moist1 = analogRead(MoisturePIN3);
+        lcd.print("M3 = "+String(moist1)+" %");
+        
+        }   
+  
+  }
 void loop() {
 
  
@@ -99,44 +144,17 @@ if(currentTxMillis - previousTxMillis >= tx_data_interval) {
 
 
     unsigned long currentScreenMillis = millis();
-if(currentScreenMillis - previousScreenMillis >= screen_refresh_interval) {
-   
-    previousScreenMillis = currentScreenMillis; 
-  //1st row always displays Outside temp 
-  lcd.setCursor(0, 0);
-  lcd.print("OUT = "+String(tempOUT)+" degC");
-    // set the cursor to column 0, line 1
-  // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
+     
+    if ((currentScreenMillis - previousScreenMillis)>=screen_refresh_interval)
+    {
+        previousScreenMillis = currentScreenMillis;
+      drawscreen(i);
+      if (i>2){i=0;}
+      else    {  i=i+1;}    
 
-if(toggle_2nd_row){
-
-      toggle_2nd_row=false;
-      float tempIN;
-  //float temp2;
- tempIN=Thermistor(analogRead(ThermistorPIN1));
- //temp2=Thermistor(analogRead(ThermistorPIN2));
-  
-  
-  //Serial.println("temp 1 = "+String(temp1));
-
- 
- //lcd.print("OUT = "+String(temp2));
- //Serial.println("temp 2 = "+String(temp2));
-lcd.print("IN = "+String(tempIN)+" degC");
-//Serial.println("IN = "+String(tempIN)+" degC");
-Serial.println("OUT = "+String(tempOUT)+" degC"); //tempOUT just to test
-} else {
-toggle_2nd_row=true;
-
-lcd.print("Out V = "+String(vcc)+" mv");
-Serial.println("OUT V = "+String(vcc)+" mv");
-
-}
-
-
-}
-
+      
+      
+    }
 
 
 }
