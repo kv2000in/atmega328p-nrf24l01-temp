@@ -60,9 +60,10 @@ void setup() {
   // optionally, reduce the payload size.  seems to
   // improve reliability
   radio.setPayloadSize(16);
-  radio.setChannel(0x60);
-  radio.setDataRate(RF24_2MBPS);
-radio.setAutoAck(1);
+  radio.setChannel(0x80);
+  radio.setDataRate(RF24_250KBPS);
+radio.setAutoAck(0);
+radio.disableCRC();
 radio.openWritingPipe(pipes[1]);
 radio.openReadingPipe(1, pipes[0]);
 radio.startListening();
@@ -148,6 +149,7 @@ if(currentTxMillis - previousTxMillis >= tx_data_interval) {
     if ((currentScreenMillis - previousScreenMillis)>=screen_refresh_interval)
     {
         previousScreenMillis = currentScreenMillis;
+      lcd.clear();
       drawscreen(i);
       if (i>2){i=0;}
       else    {  i=i+1;}    

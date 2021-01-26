@@ -139,9 +139,10 @@ void senddata(){
  radio.begin();
  radio.setRetries(15,15);
  radio.setPayloadSize(16);
- radio.setChannel(0x60);
- radio.setDataRate(RF24_2MBPS);
- radio.setAutoAck(1);
+ radio.setChannel(0x80);
+ radio.setDataRate(RF24_250KBPS);
+ radio.setAutoAck(0);
+ radio.disableCRC();
  radio.openWritingPipe(pipes[0]);
  radio.openReadingPipe(1, pipes[1]);
  radio.startListening();

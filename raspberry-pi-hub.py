@@ -5,7 +5,7 @@
 import sys
 import time
 import struct
-from RF24 import RF24, RF24_PA_MAX, RF24_2MBPS
+from RF24 import RF24, RF24_PA_MAX, RF24_2MBPS, RF24_250KBPS
 
 
 
@@ -71,9 +71,10 @@ if __name__ == "__main__":
 	# set the RX address of the TX node into a RX pipe
 	radio.openReadingPipe(1, 0xBCBCBCBCBC)  # using pipe 1
 	radio.setPayloadSize(16);
-	radio.setChannel(0x60);
-	radio.setDataRate(RF24_2MBPS);
-	radio.setAutoAck(1);
+	radio.setChannel(0x80);
+	radio.setDataRate(RF24_250KBPS);
+	radio.setAutoAck(0);
+	radio.disableCRC();
 	# for debugging, we have 2 options that print a large block of details
 	# (smaller) function that prints raw register values
 	# radio.printDetails()
