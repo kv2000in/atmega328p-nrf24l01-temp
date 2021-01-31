@@ -5,6 +5,7 @@
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
+#include <nrf_hal.h>
 
 #include <avr/sleep.h>
 #include <avr/power.h>
@@ -12,9 +13,16 @@
 
 #define DigitalSwitchTemp 4
 #define DigitalSwitchReg 5
-#define ThermistorPIN 0                
+#define ThermistorPIN 0  
+#define SpiMOSI 11
+#define SpiMISO 12
+#define SpiSCK 13
+#define SpiCSN 10
+#define SpiCE 9
+              
 float pad = 9980; 
- 
+byte old_ADCSRA;
+
 volatile int f_wdt=1;
 
 /***************************************************
@@ -63,7 +71,7 @@ void enterSleep(void)
   sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  
+  ADCSRA = old_ADCSRA;
   power_all_enable();
 }
 
@@ -83,8 +91,9 @@ RF24 radio(9,10);
 const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
 void setup(void)
 {
-  pinMode(DigitalSwitchTemp,OUTPUT);
-  pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
+  //power_twi_disable();
+  //pinMode(DigitalSwitchTemp,OUTPUT);
+  //pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
 Serial.begin(9600);
 printf_begin();
   /*** Setup the WDT ***/
@@ -133,9 +142,20 @@ long readVcc() {
 }
 
 void senddata(){
+
+power_adc_enable(); 
+power_spi_enable(); 
+//delay(20);
+// SPI.begin();
+// delay(20);
  digitalWrite(DigitalSwitchTemp,HIGH);
  digitalWrite(DigitalSwitchReg,HIGH);
- delay(50);
+ delay(20);
+ pinMode(DigitalSwitchTemp,OUTPUT);
+  pinMode(DigitalSwitchReg,OUTPUT);
+  delay(50);
+ radio.powerUp();
+ delay(20);
  radio.begin();
  radio.setRetries(15,15);
  radio.setPayloadSize(16);
@@ -148,8 +168,7 @@ void senddata(){
  radio.startListening();
  radio.stopListening();
  delay (10);
- radio.powerUp();
- delay(20);
+
  // VCC data
   float vcc=readVcc();
   char datastr[16]={'V'};
@@ -172,11 +191,32 @@ if (okT)
  delay(20);
  
 //radio.stopListening(); //some bad nrf24l01 modules don't power down. this was suggested in forums as an alternative. still didn't work.trial and error of different radios.
+
 radio.powerDown(); 
 
 delay(20);
-digitalWrite(DigitalSwitchReg,LOW);
-digitalWrite(DigitalSwitchTemp,LOW);
+//hal_nrf_set_power_mode(HAL_NRF_PWR_DOWN);
+//delay(20);
+//radio.printDetails();
+//SPI.end();
+//delay(20);
+old_ADCSRA = ADCSRA;
+ADCSRA = 0;
+power_all_disable ();
+//power_adc_disable(); 
+//power_spi_disable(); 
+delay(20);
+
+//digitalWrite(DigitalSwitchReg,LOW);
+//digitalWrite(DigitalSwitchTemp,LOW);
+// pinMode(SpiCE,INPUT);
+// pinMode(SpiCSN,INPUT);
+//  pinMode(SpiSCK,INPUT);
+//   pinMode(SpiMOSI,INPUT);
+//    pinMode(SpiMISO,INPUT); 
+ pinMode(DigitalSwitchTemp,INPUT);
+  pinMode(DigitalSwitchReg,INPUT);
+  delay(20);
 }
 
 
