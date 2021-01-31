@@ -103,10 +103,10 @@ void setup(void)
   //pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
 Serial.begin(9600);
 printf_begin();
-myDDRB=DDRB;
-myPORTB=PORTB;
-myMCUCR=MCUCR;
-printf("1) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
+//myDDRB=DDRB;
+//myPORTB=PORTB;
+//myMCUCR=MCUCR;
+//printf("1) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
@@ -154,8 +154,8 @@ long readVcc() {
 
 void senddata(){
 
-//delay(20);
-// SPI.begin();
+
+//SPI.begin();
 
  
  digitalWrite(DigitalSwitchTemp,HIGH);
@@ -171,11 +171,12 @@ delay(20);
 //myDDRB=DDRB;
 //myPORTB=PORTB;
 //myMCUCR=MCUCR;
-//  printf("2) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
+  printf("2) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
 //delay(50);
  radio.powerUp();
  delay(20);
  radio.begin();
+ delay(20);
  radio.setRetries(15,15);
  radio.setPayloadSize(16);
  radio.setChannel(0x80);
@@ -224,16 +225,22 @@ delay(20);
  pinMode(DigitalSwitchTemp,INPUT);
   pinMode(DigitalSwitchReg,INPUT);
   delay(20);
-  myDDRB=DDRB;
+  
+myDDRB=DDRB;
 myPORTB=PORTB;
-myMCUCR=MCUCR;
+//myMCUCR=MCUCR;
 //  printf("3) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
-
+SPI.end();
+delay(20);
 
 //pinMode(SpiCSN,INPUT);
 //pinMode(SpiSCK,INPUT);
-DDRB=DDRB|B11111001; //set PB1 (D9) and PB2(D10) to input
-PORTB=PORTB||B11111001; //leave everything else alone other than PB1 and PB2 
+//DDRB=DDRB|B11110011; //set PB2 (D10) and PB3(D11) to input
+//PORTB=PORTB||B11110011; //leave everything else alone other than PB2 and PB3
+//DDRB=DDRB|B11000011; 
+//PORTB=PORTB||B11000011; 
+DDRB=0;
+PORTB=0;
   delay(20);
 
 
