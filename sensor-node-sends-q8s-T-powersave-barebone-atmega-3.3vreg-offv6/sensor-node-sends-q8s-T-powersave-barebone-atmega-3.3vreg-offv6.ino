@@ -61,7 +61,9 @@ ISR(WDT_vect)
 void enterSleep(void)
 {
 
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);   
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN); 
+   ADCSRA &= ~ (1 << ADEN);            // turn off ADC
+   power_all_disable ();  
   sleep_enable();
   
   /* Now enter sleep mode. */
@@ -71,8 +73,9 @@ void enterSleep(void)
   sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  ADCSRA = old_ADCSRA;
-  power_all_enable();
+  power_all_enable ();   // power everything back on
+  ADCSRA |= (1 << ADEN);
+
 }
 
 float Thermistor(int RawADC) {
@@ -87,7 +90,7 @@ float Thermistor(int RawADC) {
 }
 
 
-RF24 radio(9,10);
+
 const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
 void setup(void)
 {
@@ -143,14 +146,15 @@ long readVcc() {
 
 void senddata(){
 
-power_adc_enable(); 
-power_spi_enable(); 
 //delay(20);
 // SPI.begin();
 // delay(20);
+ 
  digitalWrite(DigitalSwitchTemp,HIGH);
  digitalWrite(DigitalSwitchReg,HIGH);
- delay(20);
+ delay(1);
+RF24 radio(9,10);
+delay(20);
  pinMode(DigitalSwitchTemp,OUTPUT);
   pinMode(DigitalSwitchReg,OUTPUT);
   delay(50);
@@ -195,28 +199,19 @@ if (okT)
 radio.powerDown(); 
 
 delay(20);
-//hal_nrf_set_power_mode(HAL_NRF_PWR_DOWN);
-//delay(20);
-//radio.printDetails();
-//SPI.end();
-//delay(20);
-old_ADCSRA = ADCSRA;
-ADCSRA = 0;
-power_all_disable ();
-//power_adc_disable(); 
-//power_spi_disable(); 
-delay(20);
 
 //digitalWrite(DigitalSwitchReg,LOW);
 //digitalWrite(DigitalSwitchTemp,LOW);
-// pinMode(SpiCE,INPUT);
-// pinMode(SpiCSN,INPUT);
+ pinMode(SpiCE,INPUT);
+ pinMode(SpiCSN,INPUT);
 //  pinMode(SpiSCK,INPUT);
 //   pinMode(SpiMOSI,INPUT);
 //    pinMode(SpiMISO,INPUT); 
  pinMode(DigitalSwitchTemp,INPUT);
   pinMode(DigitalSwitchReg,INPUT);
   delay(20);
+
+
 }
 
 
