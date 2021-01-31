@@ -21,7 +21,9 @@
 #define SpiCE 9
               
 float pad = 9980; 
-byte old_ADCSRA;
+byte myDDRB;
+byte myPORTB;
+byte myMCUCR;
 
 volatile int f_wdt=1;
 
@@ -63,7 +65,7 @@ void enterSleep(void)
 
   set_sleep_mode(SLEEP_MODE_PWR_DOWN); 
    ADCSRA &= ~ (1 << ADEN);            // turn off ADC
-   power_all_disable ();  
+   //power_all_disable ();  
   sleep_enable();
   
   /* Now enter sleep mode. */
@@ -73,8 +75,10 @@ void enterSleep(void)
   sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  power_all_enable ();   // power everything back on
+  //power_all_enable ();   // power everything back on
   ADCSRA |= (1 << ADEN);
+  DDRB=myDDRB;
+  PORTB=myPORTB;
 
 }
 
@@ -90,7 +94,7 @@ float Thermistor(int RawADC) {
 }
 
 
-
+RF24 radio(9,10);
 const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
 void setup(void)
 {
@@ -99,6 +103,10 @@ void setup(void)
   //pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
 Serial.begin(9600);
 printf_begin();
+myDDRB=DDRB;
+myPORTB=PORTB;
+myMCUCR=MCUCR;
+printf("1) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
@@ -148,16 +156,23 @@ void senddata(){
 
 //delay(20);
 // SPI.begin();
-// delay(20);
+
  
  digitalWrite(DigitalSwitchTemp,HIGH);
  digitalWrite(DigitalSwitchReg,HIGH);
- delay(1);
-RF24 radio(9,10);
 delay(20);
+ //pinMode(SpiCE,OUTPUT);
+ //pinMode(SpiCSN,OUTPUT);
  pinMode(DigitalSwitchTemp,OUTPUT);
   pinMode(DigitalSwitchReg,OUTPUT);
   delay(50);
+
+
+//myDDRB=DDRB;
+//myPORTB=PORTB;
+//myMCUCR=MCUCR;
+//  printf("2) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
+//delay(50);
  radio.powerUp();
  delay(20);
  radio.begin();
@@ -202,13 +217,23 @@ delay(20);
 
 //digitalWrite(DigitalSwitchReg,LOW);
 //digitalWrite(DigitalSwitchTemp,LOW);
- pinMode(SpiCE,INPUT);
- pinMode(SpiCSN,INPUT);
-//  pinMode(SpiSCK,INPUT);
+ //pinMode(SpiCE,INPUT);
+
 //   pinMode(SpiMOSI,INPUT);
 //    pinMode(SpiMISO,INPUT); 
  pinMode(DigitalSwitchTemp,INPUT);
   pinMode(DigitalSwitchReg,INPUT);
+  delay(20);
+  myDDRB=DDRB;
+myPORTB=PORTB;
+myMCUCR=MCUCR;
+//  printf("3) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
+
+
+//pinMode(SpiCSN,INPUT);
+//pinMode(SpiSCK,INPUT);
+DDRB=DDRB|B11111001; //set PB1 (D9) and PB2(D10) to input
+PORTB=PORTB||B11111001; //leave everything else alone other than PB1 and PB2 
   delay(20);
 
 
