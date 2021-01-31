@@ -5,7 +5,6 @@
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
-#include <nrf_hal.h>
 
 #include <avr/sleep.h>
 #include <avr/power.h>
@@ -14,16 +13,12 @@
 #define DigitalSwitchTemp 4
 #define DigitalSwitchReg 5
 #define ThermistorPIN 0  
-#define SpiMOSI 11
-#define SpiMISO 12
-#define SpiSCK 13
-#define SpiCSN 10
-#define SpiCE 9
+
               
 float pad = 9980; 
 byte myDDRB;
 byte myPORTB;
-byte myMCUCR;
+
 
 volatile int f_wdt=1;
 
@@ -75,9 +70,9 @@ void enterSleep(void)
   sleep_disable(); /* First thing to do is disable sleep. */
   
   /* Re-enable the peripherals. */
-  //power_all_enable ();   // power everything back on
-  ADCSRA |= (1 << ADEN);
-  DDRB=myDDRB;
+ 
+  ADCSRA |= (1 << ADEN); //enable ADC
+  DDRB=myDDRB; //Reset PORTB Direction and status
   PORTB=myPORTB;
 
 }
@@ -98,15 +93,9 @@ RF24 radio(9,10);
 const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
 void setup(void)
 {
-  //power_twi_disable();
-  //pinMode(DigitalSwitchTemp,OUTPUT);
-  //pinMode(DigitalSwitchReg,OUTPUT); // Setup the digital switch pin to output mode
 Serial.begin(9600);
 printf_begin();
-//myDDRB=DDRB;
-//myPORTB=PORTB;
-//myMCUCR=MCUCR;
-//printf("1) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
+
   /*** Setup the WDT ***/
   
   /* Clear the reset flag. */
@@ -153,30 +142,16 @@ long readVcc() {
 }
 
 void senddata(){
-
-
-//SPI.begin();
-
- 
  digitalWrite(DigitalSwitchTemp,HIGH);
  digitalWrite(DigitalSwitchReg,HIGH);
-delay(20);
- //pinMode(SpiCE,OUTPUT);
- //pinMode(SpiCSN,OUTPUT);
+delay(10);
  pinMode(DigitalSwitchTemp,OUTPUT);
-  pinMode(DigitalSwitchReg,OUTPUT);
+ pinMode(DigitalSwitchReg,OUTPUT);
   delay(50);
-
-
-//myDDRB=DDRB;
-//myPORTB=PORTB;
-//myMCUCR=MCUCR;
-  printf("2) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
-//delay(50);
  radio.powerUp();
- delay(20);
+ delay(10);
  radio.begin();
- delay(20);
+ delay(30);
  radio.setRetries(15,15);
  radio.setPayloadSize(16);
  radio.setChannel(0x80);
@@ -216,32 +191,19 @@ radio.powerDown();
 
 delay(20);
 
-//digitalWrite(DigitalSwitchReg,LOW);
-//digitalWrite(DigitalSwitchTemp,LOW);
- //pinMode(SpiCE,INPUT);
-
-//   pinMode(SpiMOSI,INPUT);
-//    pinMode(SpiMISO,INPUT); 
- pinMode(DigitalSwitchTemp,INPUT);
-  pinMode(DigitalSwitchReg,INPUT);
-  delay(20);
+pinMode(DigitalSwitchTemp,INPUT);
+pinMode(DigitalSwitchReg,INPUT);
+delay(10);
   
-myDDRB=DDRB;
+myDDRB=DDRB; //Save the direction and status of PORTB
 myPORTB=PORTB;
-//myMCUCR=MCUCR;
-//  printf("3) DDRB=%x,PORTB=%x,MCUCR=%x",myDDRB,myPORTB,myMCUCR);
-SPI.end();
-delay(20);
 
-//pinMode(SpiCSN,INPUT);
-//pinMode(SpiSCK,INPUT);
-//DDRB=DDRB|B11110011; //set PB2 (D10) and PB3(D11) to input
-//PORTB=PORTB||B11110011; //leave everything else alone other than PB2 and PB3
-//DDRB=DDRB|B11000011; 
-//PORTB=PORTB||B11000011; 
+SPI.end();
+delay(10);
+
 DDRB=0;
 PORTB=0;
-  delay(20);
+delay(10);
 
 
 }
