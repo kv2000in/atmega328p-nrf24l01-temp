@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		2A2C0CA525CF153600E02F80 /* tx-working-nrf24.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "tx-working-nrf24.py"; sourceTree = "<group>"; };
 		2A350E0D25B9057C0047D263 /* raspberry-pi-hub.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "raspberry-pi-hub.py"; sourceTree = "<group>"; };
 		2A7CEE9B25C512A50084EBE0 /* nrf-hal-tx.ino */ = {isa = PBXFileReference; lastKnownFileType = text; name = "nrf-hal-tx.ino"; path = "nrf-hal-tx/nrf-hal-tx.ino"; sourceTree = "<group>"; };
 		2A7CEE9C25C681100084EBE0 /* LowestPower */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LowestPower; sourceTree = "<group>"; };
+		2A7CEE9D25CE22CB0084EBE0 /* raspberry-pi-hub-nrf24.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "raspberry-pi-hub-nrf24.py"; sourceTree = "<group>"; };
 		2A9C7D6125AA8ACF0051B1A0 /* LCD16x2-temp-NRF24l01-v1.5 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "LCD16x2-temp-NRF24l01-v1.5"; sourceTree = "<group>"; };
 		2A9C7D6225AA8B1A0051B1A0 /* sensor-node-sends-q8s-T-powersave-barebone-atmega-3.3vreg-offv6 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "sensor-node-sends-q8s-T-powersave-barebone-atmega-3.3vreg-offv6"; sourceTree = "<group>"; };
 		2A9C7D6525AFED160051B1A0 /* SimpleRx */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SimpleRx; sourceTree = "<group>"; };
@@ -20,6 +22,8 @@
 		2A9C7D5A25AA8A770051B1A0 = {
 			isa = PBXGroup;
 			children = (
+				2A2C0CA525CF153600E02F80 /* tx-working-nrf24.py */,
+				2A7CEE9D25CE22CB0084EBE0 /* raspberry-pi-hub-nrf24.py */,
 				2A7CEE9C25C681100084EBE0 /* LowestPower */,
 				2A7CEE9B25C512A50084EBE0 /* nrf-hal-tx.ino */,
 				2A350E0D25B9057C0047D263 /* raspberry-pi-hub.py */,
