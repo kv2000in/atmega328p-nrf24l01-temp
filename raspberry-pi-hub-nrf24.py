@@ -8,6 +8,7 @@
 from nrf24 import NRF24
 import time
 import sys
+import array
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 pipes = [[0xed, 0xed, 0xed, 0xed, 0xed], [0xbc, 0xbc, 0xbc, 0xbc, 0xbc]]
@@ -38,12 +39,11 @@ def slave():
 	while True:
 		pipe = [0]
 		while not radio.available(pipe, True):
-			print radio.print_status(radio.get_status())
 			time.sleep(1000000/1000000.0)		
-		print("Received")
 		recv_buffer = []
 		radio.read(recv_buffer)
-		print recv_buffer
+		sensorvalue=array.array('B',recv_buffer).tostring().strip('\x00')
+		print sensorvalue
 def master():
 	print("Now sending")
 	while True:
