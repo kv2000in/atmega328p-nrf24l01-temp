@@ -9,13 +9,15 @@
 #include "nRF24L01.h"
 #include "RF24.h"
 #include "printf.h"
-unsigned long previousScreenMillis = 0;        // will store last time LED was updated
+unsigned long previousScreenMillis = 0;        // will store last time LCD was updated
+unsigned long previousRxMillis = 0;
 unsigned long previousTxMillis = 0;
 // loop delay in milli seconds
 const long screen_refresh_interval = 1250;
-const long tx_data_interval=60000;
+const long Tx_data_interval=30000;
+const long Rx_data_interval=60000;
 boolean toggle_2nd_row=true;
-
+#define DigitalSwitchforMoistureSensor 6
 int i = 0;
 char tempOUT[6];//12.34 - 5 chars + 1 trailing char 
 char vcc[5];//4653
@@ -24,7 +26,7 @@ char vcc[5];//4653
 char blankvcc[5]={'-','-','-','-','\0'};
 char blanktempOUT[6]={'-','-','-','-','-','\0'};
 char got_time[16]; //an Array of 8 bytes - since the payload size is 8 bytes
-
+float moist1,moist2,moist3;
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
 // Set up nRF24L01 radio on SPI bus plus pins 9 & 10           
@@ -48,6 +50,7 @@ float Thermistor(int RawADC) {
 }
 
 void setup() {
+ pinMode(DigitalSwitchforMoistureSensor,INPUT);
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   Serial.begin(9600);
@@ -99,12 +102,12 @@ void drawscreen(int whichscreenamiat){
         }
         if (whichscreenamiat == 2)
         {
-        float moist1 = analogRead(MoisturePIN1);
+        
         lcd.setCursor(0, 0);
         lcd.print("M1 = "+String(moist1)+" %");
         lcd.setCursor(0, 1);
-        moist1 = analogRead(MoisturePIN2);
-        lcd.print("M2 = "+String(moist1)+" %");
+      
+        lcd.print("M2 = "+String(moist2)+" %");
         
         }
         if (whichscreenamiat == 3)
@@ -112,29 +115,105 @@ void drawscreen(int whichscreenamiat){
         lcd.setCursor(0, 0);
         lcd.print("OUT = "+String(tempOUT)+" degC");
         lcd.setCursor(0, 1);
-        float moist1 = analogRead(MoisturePIN3);
-        lcd.print("M3 = "+String(moist1)+" %");
+        lcd.print("M3 = "+String(moist3)+" %");
         
         }   
   
   }
+
+void senddata(){
+ digitalWrite(DigitalSwitchforMoistureSensor,HIGH);
+delay(10);
+ pinMode(DigitalSwitchforMoistureSensor,OUTPUT);
+  delay(100);
+
+//Have to send data from 2 thermistors and 3 moisture sensors.
+//Temp will be float data. Moistures will be 0-100. raw ADC 1023 is dry, 0 is wet
+//Temp in1 prefix A, temp in2 prefix a
+//Moist 1 prefix B, moist 2 prefix C, Moist 3 prefix D
+  moist1 = ((1023.0 - analogRead(MoisturePIN1))*100)/1023.0;
+  moist2 = ((1023.0 - analogRead(MoisturePIN2))*100)/1023.0;
+  moist3 = ((1023.0 - analogRead(MoisturePIN3))*100)/1023.0;
+  char datastr[16]={'B'};
+  dtostrf(moist1,4, 0, datastr+1);
+  datastr[5]={'C'};
+  dtostrf(moist2,4, 0, datastr+6);
+  datastr[10]={'D'};
+  dtostrf(moist3,4, 0, datastr+11);
+  
+ delay(10);
+
+ //char array for temp data
+  char mytempstr[16]={'A'};
+  float temp1,temp2;
+  temp1=Thermistor(analogRead(ThermistorPIN1));
+  dtostrf(temp1,4, 2, mytempstr+1);
+  temp2=Thermistor(analogRead(ThermistorPIN2));
+  mytempstr[7]='a';
+  dtostrf(temp2,4, 2, mytempstr+8);
+delay(10);
+
+ //Switch to Tx mode on the radio
+  radio.stopListening();
+ delay(5);
+ radio.openWritingPipe(pipes[0]);
+ radio.openReadingPipe(1, pipes[1]);
+ delay(5);
+ radio.startListening();
+ delay(5);
+ radio.stopListening();
+ delay (10);
+//send the moisture data
+bool okT = radio.write( &datastr, 16);
+if (okT)
+      printf("moist OK...\r\n");
+    else
+     printf("failed.\n\r"); 
+delay(20);
+
+ 
+ 
+//send the temp data
+okT = radio.write( &mytempstr, 16);
+if (okT)
+      printf("temp OK...\r\n");
+    else
+     printf("failed.\n\r"); 
+
+
+ delay(20);
+
+//Set the radio back in listen mode
+radio.openWritingPipe(pipes[1]);
+radio.openReadingPipe(1, pipes[0]);
+radio.startListening();
+radio.stopListening();
+delay (10);
+radio.startListening();
+delay(10);
+//Turn off the moisture switch
+pinMode(DigitalSwitchforMoistureSensor,INPUT);
+delay(10);
+
+}
+
 void loop() {
 
  
 
     if( radio.available()){
         radio.read( got_time, 16 );             // Get the payload
-       previousTxMillis=millis();
+       previousRxMillis=millis();
      
       memcpy(vcc,got_time+1,4);
       memcpy(tempOUT,got_time+6,5);  
   }
 
   
-      unsigned long currentTxMillis = millis();
-if(currentTxMillis - previousTxMillis >= tx_data_interval) {
-   previousTxMillis=currentTxMillis;
-    //No data received in last tx-data_interval
+      unsigned long currentRxMillis = millis();
+if(currentRxMillis - previousRxMillis >= Rx_data_interval) {
+   previousRxMillis=currentRxMillis;
+    //No data received in last Rx-data_interval
     Serial.println("No data received");
     //Fill with blanks again - until data is received    
      memcpy(vcc,blankvcc,5);
@@ -142,7 +221,12 @@ if(currentTxMillis - previousTxMillis >= tx_data_interval) {
 }
   
   
-
+      unsigned long currentTxMillis = millis();
+if(currentTxMillis - previousTxMillis >= Tx_data_interval) {
+   previousTxMillis=currentTxMillis;
+    //Time to send out some sensor data on the ether
+  senddata();
+}
 
     unsigned long currentScreenMillis = millis();
      
