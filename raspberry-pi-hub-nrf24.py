@@ -25,8 +25,8 @@ radio.setPALevel(NRF24.PA_MAX)
 radio.setAutoAck(0)
 radio.disableCRC() # sets the EN_CRC as required by datasheet. For Rx packet to reach RX_FIFO address and CRC match is needed. 
 #radio.setCRCLength(NRF24.CRC_DISABLED)
-radio.openWritingPipe(pipes[1])
-radio.openReadingPipe(1, pipes[0])
+radio.openWritingPipe(pipes[0])
+radio.openReadingPipe(1, pipes[1])
 radio.powerUp()
 radio.startListening()
 radio.stopListening()
@@ -55,7 +55,7 @@ def master():
 		print radio.whatHappened()
 		time.sleep(6000000/1000000.0)
 try:
-	master()
+	slave()
 except KeyboardInterrupt:
 	radio.powerDown()
 	print(" Keyboard Interrupt detected. Exiting...")

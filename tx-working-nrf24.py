@@ -260,7 +260,7 @@ class NRF24:
         #GPIO(self.irq_pin, "in")
         
 
-        time.sleep(5 / 1000000.0)
+        time.sleep(5 / 1000.0)
 
         # Reset radio configuration
         self.reset()
@@ -316,10 +316,10 @@ class NRF24:
         #Call power up before calling startlistening (datasheet page 20/74)
         self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PRIM_RX) # don't power up, just set the PRIM_RX flag
         self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT) # writing 1 clears these bits on the STATUS register Datasheet page number 55/74
-
+        
         self.flush_tx()
         self.flush_rx()
-        self.clear_irq_flags()
+        #self.clear_irq_flags() # same as self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT)
 
         # Restore the pipe0 address, if exists
         if self.pipe0_reading_address:
@@ -528,7 +528,7 @@ class NRF24:
 
     def powerUp(self):
         self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PWR_UP)
-        time.sleep(2000e-6) # POwer up takes 1.5 ms datasheet page 20/74
+        time.sleep(6000e-6) # POwer up takes 1.5 ms datasheet page 20/74 and can be up to 5 ms according to tmrh20 code
 
     def write(self, buf):
         self.last_error = None
