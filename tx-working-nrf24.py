@@ -312,8 +312,10 @@ class NRF24:
             self.spidev = None
 
     def startListening(self):
-        self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PWR_UP | NRF24.PRIM_RX)
-        self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT)
+        #self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PWR_UP | NRF24.PRIM_RX)
+        #Call power up before calling startlistening (datasheet page 20/74)
+        self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PRIM_RX) # don't power up, just set the PRIM_RX flag
+        self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT) # writing 1 clears these bits on the STATUS register Datasheet page number 55/74
 
         self.flush_tx()
         self.flush_rx()
@@ -322,9 +324,11 @@ class NRF24:
         # Restore the pipe0 address, if exists
         if self.pipe0_reading_address:
             self.write_register(self.RX_ADDR_P0, self.pipe0_reading_address)
-
+        #need 150 us after setting PRIM_RX and CE to 1 (datasheet page 20/74)
         # Go!
+        time.sleep(200e-6)
         self.ce(1)
+        time.sleep(500e-6)
 
     def ce(self, level, pulse=0):
         # CE Pin is optional
@@ -517,19 +521,20 @@ class NRF24:
 
         # Enable pipe 0 for auto-ack
         self.write_register(NRF24.EN_RXADDR, self.read_register(NRF24.EN_RXADDR) | 1)
+        time.sleep(500e-6)
 
     def powerDown(self):
         self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) & ~ NRF24.PWR_UP)
 
     def powerUp(self):
         self.write_register(NRF24.CONFIG, self.read_register(NRF24.CONFIG) | NRF24.PWR_UP)
-        time.sleep(150e-6)
+        time.sleep(2000e-6) # POwer up takes 1.5 ms datasheet page 20/74
 
     def write(self, buf):
         self.last_error = None
         length = self.write_payload(buf)
         self.ce(1)
-
+        
         sent_at = monotonic()
         packet_time = ((1 + length + self.crc_length + self.address_length) * 8 + 9)/(self.data_rate_bits * 1000.)
 
@@ -593,20 +598,20 @@ class NRF24:
         # doesn't set the RX flag...
         if status & NRF24.RX_DR or (status & NRF24.RX_P_NO_MASK != NRF24.RX_P_NO_MASK):
             result = True
-        else:
-            if irq_wait:  # Will use IRQ wait
-                if self.irqWait(irq_timeout):  # Do we have a packet?
-                    status = self.get_status()  # Seems like we do!
-                    if status & NRF24.RX_DR or (status & NRF24.RX_P_NO_MASK != NRF24.RX_P_NO_MASK):
-                        result = True
+        #else:
+        #    if irq_wait:  # Will use IRQ wait
+        #        if self.irqWait(irq_timeout):  # Do we have a packet?
+        #            status = self.get_status()  # Seems like we do!
+        #            if status & NRF24.RX_DR or (status & NRF24.RX_P_NO_MASK != NRF24.RX_P_NO_MASK):
+        #               result = True
 
-        del pipe_num[:]
-        if result and pipe_num is not None:
-            pipe_num.append((status & NRF24.RX_P_NO_MASK) >> NRF24.RX_P_NO)
+        #del pipe_num[:]
+        #if result and pipe_num is not None:
+        #    pipe_num.append((status & NRF24.RX_P_NO_MASK) >> NRF24.RX_P_NO)
 
         # Handle ack payload receipt
-        if status & NRF24.TX_DS:
-            self.write_register(NRF24.STATUS, NRF24.TX_DS)
+        #if status & NRF24.TX_DS:
+        #    self.write_register(NRF24.STATUS, NRF24.TX_DS)
 
         return result
 
@@ -623,7 +628,7 @@ class NRF24:
     def whatHappened(self):
         # Read the status & reset the status in one easy call
         # Or is that such a good idea?
-        self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT)
+        #self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT)  # Why write first? isn't it resetting the status
 
         status = self.get_status()
         self.clear_irq_flags()
@@ -632,6 +637,7 @@ class NRF24:
         tx_ok = status & NRF24.TX_DS
         tx_fail = status & NRF24.MAX_RT
         rx_ready = status & NRF24.RX_DR
+        self.write_register(NRF24.STATUS, NRF24.RX_DR | NRF24.TX_DS | NRF24.MAX_RT) # after reading what happened - now reset
         return {'tx_ok': tx_ok, "tx_fail": tx_fail, "rx_ready": rx_ready}
 
     def openWritingPipe(self, value):
