@@ -6,6 +6,19 @@
 # João Paulo Barraca <jpbarraca@gmail.com>
 #
 #
+#Working raspberry pi (both tx and rx) has 
+# uname -a Linux raspberrypi 4.9.59+ #1047 Sun Oct 29 11:47:10 GMT 2017 armv6l GNU/Linux
+# python -V 2.7.13
+# RPi.GPIO-0.6.3.egg-info
+# spidev-3.3.egg-info
+#
+#Tx only raspberry pi has 
+#uname - a Linux raspberrypi 4.9.59+ #1047 Sun Oct 29 11:47:10 GMT 2017 armv6l GNU/Linux
+#python -V 2.7.13
+#RPi.GPIO-0.6.5.egg-info changed it RPi.GPIO-0.6.3.egg-info via sudo pip install rpi.gpio==0.6.3 - reboot - still doesn't work Rx
+#spidev-3.0.egg-info - updating to spidev-3.3.egg-info via sudo apt-get install python-spidev - reboot - still doesn't work Rx
+# So, ultimately - same software - as much as I can investigate - same HW. RX from Atmega328 NRF24L01 works on one SW setup and doesn't work on another.
+
 from nrf24 import NRF24
 import time
 import sys
