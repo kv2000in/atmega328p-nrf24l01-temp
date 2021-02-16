@@ -62,9 +62,9 @@ def slave():
 def master():
 	print("Now sending")
 	while True:
-		#max min values to be sent as maxBminBmaxCminCmaxDminDmaxEminE 2 bytes each x 8 = 16 bytes
-		mymaxminvalues=[1023,100,1023,100,1023,100,1023,100]
-		mybytearray=struct.pack('hhhhhhhh',*mymaxminvalues) #h = unsigned short 2 bytes. create 8 short datasets
+		#max min values to be sent as maxBminBmaxCminCmaxDminD 2 bytes each x 6 = 12 bytes
+		mymaxminvalues=[1023,100,1023,100,1023,100]
+		mybytearray=struct.pack('hhhhhh',*mymaxminvalues) #h = unsigned short 2 bytes. create 8 short datasets
 		radio.write(mybytearray)
 		time.sleep(200/1000000.0)
 		print radio.whatHappened()

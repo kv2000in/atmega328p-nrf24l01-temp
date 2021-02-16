@@ -5,7 +5,7 @@
 #define MoisturePIN1 2
 #define MoisturePIN2 3
 #define MoisturePIN3 4
-#define MoisturePIN4 5
+
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
@@ -36,8 +36,7 @@ float max2=1023.0;
 float min2=0.0;
 float max3=1023.0;
 float min3=0.0;
-float max4=1023.0;
-float min4=0.0;
+
 uint8_t onwhichpipedatawasreceived;
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
@@ -131,15 +130,7 @@ void drawscreen(int whichscreenamiat){
         lcd.print("M3 = "+String(moist3)+" %");
         
         }   
-
-          if (whichscreenamiat == 4)
-        {
-        lcd.setCursor(0, 0);
-        lcd.print("OUT = "+String(tempOUT)+" degC");
-        lcd.setCursor(0, 1);
-        lcd.print("M4 = "+String(moist4)+" %");
-        
-        }  
+ 
   }
 
 void senddata(){
@@ -158,16 +149,14 @@ delay(10);
   delay(1);
   moist3 = ((max3 - analogRead(MoisturePIN3))*100)/(max3-min3);
   delay(1);
-  moist4 = ((max4 - analogRead(MoisturePIN4))*100)/(max4-min4);
-  delay(1);
+
   char moistdatastr1[16]={'B'};
   dtostrf(moist1,6, 1, moistdatastr1+1);//B-100.0 - max space needed = 7 chars per read
   moistdatastr1[7]={'C'};
   dtostrf(moist2,6, 1, moistdatastr1+8); //B-999.9C-999.9 = 14 chars. 
   char moistdatastr2[16]={'D'};
   dtostrf(moist3,6, 1, moistdatastr2+1);
-  moistdatastr2[7]={'E'};
-  dtostrf(moist4,6, 1, moistdatastr2+8); //D-999.9E-999.9 = 14 chars. 
+  
  //char array for temp data
   char mytempstr[16]={'A'};
   float temp1,temp2;
@@ -242,16 +231,14 @@ void handleconfig(char *myconfigdata)
   memcpy(&mymin2,myconfigdata+6,2);
    memcpy(&mymax3,myconfigdata+8,2);
   memcpy(&mymin3,myconfigdata+10,2);
-   memcpy(&mymax4,myconfigdata+12,2);
-  memcpy(&mymin4,myconfigdata+14,2);
+
 max1=mymax1;
 max2=mymax2;
 max3=mymax3;
-max4=mymax4;
+
 min1=mymin1;
 min2=mymin2;
 min3=mymin3;
-min4=mymin4;
   
   }
 void loop() {
@@ -300,7 +287,7 @@ if(currentTxMillis - previousTxMillis >= Tx_data_interval) {
         previousScreenMillis = currentScreenMillis;
       lcd.clear();
       drawscreen(i);
-      if (i>3){i=0;}
+      if (i>2){i=0;}
       else    {  i=i+1;}    
 
       
