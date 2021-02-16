@@ -5,6 +5,7 @@
 #define MoisturePIN1 2
 #define MoisturePIN2 3
 #define MoisturePIN3 4
+#define MoisturePIN4 5
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
@@ -25,8 +26,19 @@ char vcc[5];//4653
     // tempOUT[5]='\0';
 char blankvcc[5]={'-','-','-','-','\0'};
 char blanktempOUT[6]={'-','-','-','-','-','\0'};
-char got_time[16]; //an Array of 8 bytes - since the payload size is 8 bytes
-float moist1,moist2,moist3;
+char got_time[16]; //an Array of 16 bytes - since the payload size is 16 bytes
+float moist1,moist2,moist3,moist4;
+//Max min usable ADC values for moisture sensors
+//Plan to update/calibrate dynamically via another pipe on the radio
+float max1=1023.0;
+float min1=0.0;
+float max2=1023.0;
+float min2=0.0;
+float max3=1023.0;
+float min3=0.0;
+float max4=1023.0;
+float min4=0.0;
+uint8_t onwhichpipedatawasreceived;
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
 // Set up nRF24L01 radio on SPI bus plus pins 9 & 10           
@@ -34,7 +46,7 @@ LiquidCrystal lcd(8, 7, 5, 4, 3, 2);
 RF24 radio(9,10);
 
 // Radio pipe addresses for the 2 nodes to communicate.              
-const uint64_t pipes[2] = { 0xBCBCBCBCBC,0xEDEDEDEDED };
+const uint64_t pipes[3] = { 0xBCBCBCBCBC,0xEDEDEDEDED,0xBCBCBCBCBD };
 float Thermistor(int RawADC) {
   float pad = 9980; // Actual measured value of the 10k pad register.
   long Resistance;  
@@ -68,7 +80,8 @@ void setup() {
 radio.setAutoAck(0);
 radio.disableCRC();
 radio.openWritingPipe(pipes[1]);
-radio.openReadingPipe(1, pipes[0]);
+radio.openReadingPipe(1, pipes[0]); //0xBCBCBCBCBC
+radio.openReadingPipe(2, pipes[2]); //0xBCBCBCBCBD Receive config from pi-hub on this pipe.
 radio.startListening();
 radio.stopListening();
 delay (10);
@@ -118,7 +131,15 @@ void drawscreen(int whichscreenamiat){
         lcd.print("M3 = "+String(moist3)+" %");
         
         }   
-  
+
+          if (whichscreenamiat == 4)
+        {
+        lcd.setCursor(0, 0);
+        lcd.print("OUT = "+String(tempOUT)+" degC");
+        lcd.setCursor(0, 1);
+        lcd.print("M4 = "+String(moist4)+" %");
+        
+        }  
   }
 
 void senddata(){
@@ -131,26 +152,33 @@ delay(10);
 //Temp will be float data. Moistures will be 0-100. raw ADC 1023 is dry, 0 is wet
 //Temp in1 prefix A, temp in2 prefix a
 //Moist 1 prefix B, moist 2 prefix C, Moist 3 prefix D
-  moist1 = ((1023.0 - analogRead(MoisturePIN1))*100)/1023.0;
-  moist2 = ((1023.0 - analogRead(MoisturePIN2))*100)/1023.0;
-  moist3 = ((1023.0 - analogRead(MoisturePIN3))*100)/1023.0;
-  char datastr[16]={'B'};
-  dtostrf(moist1,4, 0, datastr+1);
-  datastr[5]={'C'};
-  dtostrf(moist2,4, 0, datastr+6);
-  datastr[10]={'D'};
-  dtostrf(moist3,4, 0, datastr+11);
-  
- delay(10);
-
+  moist1 = ((max1 - analogRead(MoisturePIN1))*100)/(max1-min1);
+  delay(1);
+  moist2 = ((max2 - analogRead(MoisturePIN2))*100)/(max2-min2);
+  delay(1);
+  moist3 = ((max3 - analogRead(MoisturePIN3))*100)/(max3-min3);
+  delay(1);
+  moist4 = ((max4 - analogRead(MoisturePIN4))*100)/(max4-min4);
+  delay(1);
+  char moistdatastr1[16]={'B'};
+  dtostrf(moist1,6, 1, moistdatastr1+1);//B-100.0 - max space needed = 7 chars per read
+  moistdatastr1[7]={'C'};
+  dtostrf(moist2,6, 1, moistdatastr1+8); //B-999.9C-999.9 = 14 chars. 
+  char moistdatastr2[16]={'D'};
+  dtostrf(moist3,6, 1, moistdatastr2+1);
+  moistdatastr2[7]={'E'};
+  dtostrf(moist4,6, 1, moistdatastr2+8); //D-999.9E-999.9 = 14 chars. 
  //char array for temp data
   char mytempstr[16]={'A'};
   float temp1,temp2;
   temp1=Thermistor(analogRead(ThermistorPIN1));
-  dtostrf(temp1,4, 2, mytempstr+1);
+  delay(1);
+  dtostrf(temp1,6, 2, mytempstr+1); //22.22 = 5 chars. -22.22 = 6 chars. need to leave total A-22.22 = 7 Chars 
   temp2=Thermistor(analogRead(ThermistorPIN2));
-  mytempstr[7]='a';
-  dtostrf(temp2,4, 2, mytempstr+8);
+  delay(1);
+  mytempstr[7]=':';
+  mytempstr[8]='a';
+  dtostrf(temp2,6, 2, mytempstr+9); //A-22.22:a-22.22 
 delay(10);
 
  //Switch to Tx mode on the radio
@@ -164,13 +192,18 @@ delay(10);
  radio.stopListening();
  delay (10);
 //send the moisture data
-bool okT = radio.write( &datastr, 16);
+bool okT = radio.write( &moistdatastr1, 16);
 if (okT)
-      printf("moist OK...\r\n");
+      printf("moist1 OK...\r\n");
     else
      printf("failed.\n\r"); 
 delay(20);
-
+okT = radio.write( &moistdatastr2, 16);
+if (okT)
+      printf("moist2 OK...\r\n");
+    else
+     printf("failed.\n\r"); 
+delay(20);
  
  
 //send the temp data
@@ -186,6 +219,7 @@ if (okT)
 //Set the radio back in listen mode
 radio.openWritingPipe(pipes[1]);
 radio.openReadingPipe(1, pipes[0]);
+radio.openReadingPipe(2, pipes[2]);
 radio.startListening();
 radio.stopListening();
 delay (10);
@@ -196,17 +230,48 @@ pinMode(DigitalSwitchforMoistureSensor,INPUT);
 delay(10);
 
 }
-
+void handleconfig(char *myconfigdata)
+{
+  //order of configdata will be 0xFF 0xFF Max for B 0x11 0x11 min for B, 0xFF 0xFF max for C and so on
+  //take the 4 bytes - convert into an integer and use the value.
+  //ints to hold the values temporarily before being cast to floats defined above
+  int mymax1,mymax2,mymax3,mymax4, mymin1,mymin2, mymin3,mymin4;
+ memcpy(&mymax1,myconfigdata,2);
+  memcpy(&mymin1,myconfigdata+2,2);
+   memcpy(&mymax2,myconfigdata+4,2);
+  memcpy(&mymin2,myconfigdata+6,2);
+   memcpy(&mymax3,myconfigdata+8,2);
+  memcpy(&mymin3,myconfigdata+10,2);
+   memcpy(&mymax4,myconfigdata+12,2);
+  memcpy(&mymin4,myconfigdata+14,2);
+max1=mymax1;
+max2=mymax2;
+max3=mymax3;
+max4=mymax4;
+min1=mymin1;
+min2=mymin2;
+min3=mymin3;
+min4=mymin4;
+  
+  }
 void loop() {
 
  
 
-    if( radio.available()){
+    if( radio.available(&onwhichpipedatawasreceived)){
+        if (onwhichpipedatawasreceived ==1){
         radio.read( got_time, 16 );             // Get the payload
        previousRxMillis=millis();
      
       memcpy(vcc,got_time+1,4);
       memcpy(tempOUT,got_time+6,5);  
+        }
+        if (onwhichpipedatawasreceived ==2){
+        //data received on config pipe. Config to be sent as 16 bytes - 2 bytes max/2 bytes min - 4bytes per sensor x 4 sensors = 16 bytes
+        radio.read( got_time, 16 );             // Get the payload
+        handleconfig(got_time);  
+        }
+        
   }
 
   
@@ -235,7 +300,7 @@ if(currentTxMillis - previousTxMillis >= Tx_data_interval) {
         previousScreenMillis = currentScreenMillis;
       lcd.clear();
       drawscreen(i);
-      if (i>2){i=0;}
+      if (i>3){i=0;}
       else    {  i=i+1;}    
 
       
