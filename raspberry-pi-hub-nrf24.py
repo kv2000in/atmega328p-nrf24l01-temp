@@ -23,10 +23,10 @@ from nrf24 import NRF24
 import time
 import sys
 import array
-import struct
+from struct import *
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
-pipes = [[0xed, 0xed, 0xed, 0xed, 0xed], [0xbc, 0xbc, 0xbc, 0xbc, 0xbc], [0xbc, 0xbc, 0xbc, 0xbc, 0xbd]]
+pipes = [[0xbc, 0xbc, 0xbc, 0xbc, 0xbc],[0xed, 0xed, 0xed, 0xed, 0xed]]
 
 radio = NRF24()
 radio.begin(0, 0, 25,24)
@@ -41,8 +41,8 @@ radio.setPALevel(NRF24.PA_MAX)
 radio.setAutoAck(0)
 radio.disableCRC() # sets the EN_CRC as required by datasheet. For Rx packet to reach RX_FIFO address and CRC match is needed. 
 #radio.setCRCLength(NRF24.CRC_DISABLED)
-radio.openWritingPipe(pipes[2]) # will be used to send config to atmega with display
-radio.openReadingPipe(1, pipes[1])
+radio.openWritingPipe(pipes[1]) 
+radio.openReadingPipe(1, pipes[0])
 radio.powerUp()
 radio.startListening()
 radio.stopListening()
@@ -62,15 +62,18 @@ def slave():
 def master():
 	print("Now sending")
 	while True:
-		#max min values to be sent as maxBminBmaxCminCmaxDminD 2 bytes each x 6 = 12 bytes
-		mymaxminvalues=[1023,100,1023,100,1023,100]
-		mybytearray=struct.pack('hhhhhh',*mymaxminvalues) #h = unsigned short 2 bytes. create 8 short datasets
+		#mybuf="V3535  8.28"
+		#myencodedbuf = mybuf.encode()
+		#mybytearray=bytearray(myencodedbuf)
+		#max min values to be sent as maxBminBmaxCminCmaxDminD 2 bytes each x 8 = 16 bytes
+		mymaxminvalues=[929,137,1000,200,900,300,1023,128]
+		mybytearray=pack('<8H',*mymaxminvalues) #H = unsigned short 2 bytes <=little endian. create 8 short datasets
 		radio.write(mybytearray)
 		time.sleep(200/1000000.0)
 		print radio.whatHappened()
-		time.sleep(6000000/1000000.0)
+		time.sleep(60000000/1000000.0)
 try:
-	slave()
+	master()
 except KeyboardInterrupt:
 	radio.powerDown()
 	print(" Keyboard Interrupt detected. Exiting...")
