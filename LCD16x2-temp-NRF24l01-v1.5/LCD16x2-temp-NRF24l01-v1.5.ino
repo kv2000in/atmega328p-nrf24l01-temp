@@ -1,3 +1,7 @@
+//LCD Atmega328p with NRF24L01 runs MCUDude/Minicore Atemga328 Bootloader yes UART0 BOD 2.7V Internal 2 MHz LTO Enabled eeprom retained
+//Remove all peripherals, use short USB extension - power via 3.3V from USB-TTL and set Logic jumper to 3.3V to reliably upload sketch via bootloader
+//Non-LCD Atmega328p with NRF24L01 runs MCUDude/Minicore Atemga328 Bootloader yes UART0 BOD 2.7V External 18.432 MHz LTO Enabled eeprom retained
+//Power it via 5V USB-TTL with Logic Jumper on 5V, can use the long USB extension.
 #include <LiquidCrystal.h>
 #include <math.h>
 #define ThermistorPIN1 0
@@ -79,9 +83,9 @@ void setup() {
   radio.setDataRate(RF24_250KBPS);
 radio.setAutoAck(0);
 radio.disableCRC();
-radio.openWritingPipe(pipes[1]);
-radio.openReadingPipe(1, pipes[0]); 
-radio.openReadingPipe(0, pipes[1]); 
+radio.openWritingPipe(pipes[0]);
+radio.openReadingPipe(0, pipes[0]); //Need to do this for receive data on Data pipe 0 other wise it stays in closed state.
+radio.openReadingPipe(1, pipes[1]); 
 radio.startListening();
 radio.stopListening();
 delay (10);
@@ -179,7 +183,7 @@ delay(10);
   dtostrf(temp1,6, 2, mytempstr+1); //22.22 = 5 chars. -22.22 = 6 chars. need to leave total A-22.22 = 7 Chars 
   temp2=Thermistor(analogRead(ThermistorPIN2));
   delay(1);
-  mytempstr[7]=':';
+  //mytempstr[7]=':'; causing unnecessarry saving issues
   mytempstr[8]='a';
   dtostrf(temp2,6, 2, mytempstr+9); //A-22.22:a-22.22 
 delay(10);
@@ -252,13 +256,13 @@ void loop() {
  
 
     if( radio.available(&onwhichpipedatawasreceived)){
-        if (onwhichpipedatawasreceived ==1){
+        if (onwhichpipedatawasreceived ==0){
         radio.read( got_time, 16 );             // Get the payload
        previousRxMillis=millis();
       memcpy(vcc,got_time+1,4);
       memcpy(tempOUT,got_time+6,5);  
         }
-        if (onwhichpipedatawasreceived ==0){
+        if (onwhichpipedatawasreceived ==1){
         //data received on config pipe. Config to be sent as 16 bytes - 2 bytes max/2 bytes min - 4bytes per sensor x 4 sensors = 16 bytes
         radio.read( got_time, 16 );             // Get the payload
         handleconfig(got_time);

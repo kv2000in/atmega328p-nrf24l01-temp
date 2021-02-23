@@ -8,6 +8,8 @@
 
 /* Begin PBXFileReference section */
 		2A2C0CA525CF153600E02F80 /* tx-working-nrf24.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "tx-working-nrf24.py"; sourceTree = "<group>"; };
+		2A2C0CA625E1B68C00E02F80 /* sensor.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = sensor.html; sourceTree = "<group>"; };
+		2A2C0CA725E1F27C00E02F80 /* myplotly.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = myplotly.js; sourceTree = "<group>"; };
 		2A350E0D25B9057C0047D263 /* raspberry-pi-hub.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "raspberry-pi-hub.py"; sourceTree = "<group>"; };
 		2A7CEE9B25C512A50084EBE0 /* nrf-hal-tx.ino */ = {isa = PBXFileReference; lastKnownFileType = text; name = "nrf-hal-tx.ino"; path = "nrf-hal-tx/nrf-hal-tx.ino"; sourceTree = "<group>"; };
 		2A7CEE9C25C681100084EBE0 /* LowestPower */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LowestPower; sourceTree = "<group>"; };
@@ -22,6 +24,8 @@
 		2A9C7D5A25AA8A770051B1A0 = {
 			isa = PBXGroup;
 			children = (
+				2A2C0CA725E1F27C00E02F80 /* myplotly.js */,
+				2A2C0CA625E1B68C00E02F80 /* sensor.html */,
 				2A2C0CA525CF153600E02F80 /* tx-working-nrf24.py */,
 				2A7CEE9D25CE22CB0084EBE0 /* raspberry-pi-hub-nrf24.py */,
 				2A7CEE9C25C681100084EBE0 /* LowestPower */,
