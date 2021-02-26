@@ -132,28 +132,28 @@ def tcp_sensorthread(client_socket):
 	#B100.0C100.0 D100.0E100.0 A-23.3a-23.3 where A is inside temp1 a is inside temp2 t is outside temp B is moisture 1 C is moisture 2 D is moisture 3 and E moisture 4
 	#Everything gets saved in one file and file is named daily.
 	#everything gets saved as datetime:sensor:value:batterylevel
-	#for ESP data - 02/20/2021|21-04-33:2:153:3403
-	#for nrf data - 02/20/2021|21-04-33:t:-1.09:4465
+	#for ESP data - 2021-02-20 21-04-33:2:153:3403
+	#for nrf data - 2021-02-20 21-04-33:t:-1.09:4465
 	#send data to clients in the same format.
 	if (client_socket):
 		request = client_socket.recv(1024)
 		#print 'Received {}'.format(request)
-		#1:54:3230 = sensornode:distance in cms:vcc
+		#1:54:3230 = sensornode:distance in cms:vcc. Saving it uniformly as time:sensor:value. Assigning v for this sensors battery.
 		client_socket.close()
 		currtime=time.time()
 		sensorvalue=request
-		if (sensorvalue.split(':')[0]=="2"):
-				SENSORTIME=datetime.now().strftime("%m/%d/%Y|%H-%M-%S")
-				raw_Sensor_1_Reading=sensorvalue.split(':')[1]
-				battery1level=str(sensorvalue.split(':')[2])
-				messagetosendtoclients=u'SensorData='+str(SENSORTIME)+u':'+sensorvalue
+		SENSORTIME=datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 		for ws in clients:
-			ws.sendMessage(messagetosendtoclients)
-		savesensordatatofile(request)
+			ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue.split(':')[0]+u':'+sensorvalue.split(':')[1])
+			ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':v:'+sensorvalue.split(':')[2])
+		savesensordatatofile(sensorvalue.split(':')[0]+":"+sensorvalue.split(':')[1])
+		savesensordatatofile("v:"+sensorvalue.split(':')[2])
 #This function matches incoming data for invalid chars. Doesn't solve all the problems of not having CRC (if the error is 4445 instead of 4465 - it will pass the check but if it is 44*5, it will fail.
 def checkfordataintegrity(receivedsensorvalue):
+	if not (re.match("[A|V|B|D][\s\-0-9]{1,3}.+[a|C|E|t][\s\-0-9]{1,3}[\.0-9]",receivedsensorvalue)):
+		return False
 	for char in receivedsensorvalue:
-		if not (re.match("[a-zA-Z0-9\-\.]",char)):
+		if not (re.match("[a-zA-Z0-9\-\.\s\:]",char)):#re.match only looks at the 1st position. look for all the chars which should be there - for each char in the recvd data. If any outside the expected vals - return false.
 			return False
 	return True
 def nrf_sensorthread():
@@ -162,8 +162,8 @@ def nrf_sensorthread():
 	#B100.0C100.0 D100.0E100.0 A-23.3a-23.3 where A is inside temp1 a is inside temp2 t is outside temp B is moisture 1 C is moisture 2 D is moisture 3 and E moisture 4
 	#Everything gets saved in one file and file is named daily.
 	#everything gets saved as datetime:sensor:value:batterylevel
-	#for ESP data - 02/20/2021|21-04-33:2:153:3403
-	#for nrf data - 02/20/2021|21-04-33:t:-1.09:4465
+	#for ESP data - 2021-02-20 21-04-33:2:153:3403
+	#for nrf data - 2021-02-20 21-04-33:t:-1.09:4465
 	#send data to clients in the same format.
 	radio.startListening()
 	print("Now Listening")
@@ -175,21 +175,14 @@ def nrf_sensorthread():
 		radio.read(recv_buffer)
 		rawsensorvalue=array.array('B',recv_buffer).tostring().strip('\x00')
 		sensorvalue=re.split(r'([a-z]|[A-Z])',rawsensorvalue) #"V4465t-3.91" becomes ['', 'V', '4465', 't', '-3.91'] ,"B  99.9 C  88.8" becomes ['', 'B', '  99.9 ', 'C', '  88.8'] 
-		SENSORTIME=datetime.now().strftime("%m/%d/%Y|%H-%M-%S")
+		SENSORTIME=datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 		try:
-			if (sensorvalue[3]=='t'):
-				sensorvalue=sensorvalue[3]+":"+sensorvalue[4]+":"+sensorvalue[2]
-				for ws in clients:
-					ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue)
-				if checkfordataintegrity(rawsensorvalue):
-					savesensordatatofile(sensorvalue)
-			else:
-				for ws in clients:
-					ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue[1]+u':'+sensorvalue[2])
-					ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue[3]+u':'+sensorvalue[4])
-				if checkfordataintegrity(rawsensorvalue):
-					savesensordatatofile(sensorvalue[1]+":"+sensorvalue[2])
-					savesensordatatofile(sensorvalue[3]+":"+sensorvalue[4])
+			for ws in clients:
+				ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue[1]+u':'+sensorvalue[2])
+				ws.sendMessage(u'SensorData='+str(SENSORTIME)+u':'+sensorvalue[3]+u':'+sensorvalue[4])
+			if checkfordataintegrity(rawsensorvalue):
+				savesensordatatofile(sensorvalue[1]+":"+sensorvalue[2])
+				savesensordatatofile(sensorvalue[3]+":"+sensorvalue[4])
 		except Exception as e:
 			if hasattr(e, 'message'):
 				print(e.message)
@@ -198,7 +191,7 @@ def nrf_sensorthread():
 			pass
 def savesensordatatofile(formattedsensordata):
 	fobj = open("sensordata"+str(date.today()), 'a+')
-	fobj.write(datetime.now().strftime("%m/%d/%Y|%H-%M-%S"))
+	fobj.write(datetime.now().strftime("%Y-%m-%d %H-%M-%S"))
 	fobj.write(":")
 	fobj.write(formattedsensordata)
 	fobj.write('\n')
@@ -240,24 +233,69 @@ def plotcharts(inputfile,starttime,endtime,*vars):
 		else:
 			print(e)
 
-def sendstoreddata(sensorid,starttime,endtime):
-	print "function sendstoreddata"
-
+#Request for plot will come as which sensor, starttime, stoptime.
+#open the file with name sensordata+startdate name, read lines, seek until time is >time from starttime
+#read line by line - if sensor matches the sensor requested - push the time and value data in the list
+#reached EOF but time>stoptime - open next file sensordata+startdate+1 name and start reading lines.
+# uniformly date time format yyyy-mm-dd|hh-mm-ss seems to work
+#return data as "t$2021-02-20 21-04-33:-1.09,2021-02-20 21-04-41:-1.08,"
+def sendstoreddata(starttime,endtime,*vars):
+	mydatapointcounter=0
+	mytempdataholdingdict={} #get all the data in a list and send it to javascript in chunks of "numberofdatapoints" length
+	mytempfilecontentholdinglist=[]
+	mystarttimedatetimeformat=datetime.strptime(starttime,"%Y-%m-%d %H-%M-%S")
+	myendtimedatetimeformat=datetime.strptime(endtime,"%Y-%m-%d %H-%M-%S")
+	mystartdate=mystarttimedatetimeformat.date()
+	for sensorid in vars:
+		mytempdataholdingdict[sensorid]=[]
+	try:
+		
+		while (myendtimedatetimeformat.date()>=mystartdate):
+			with open("sensordata"+str(mystartdate),"r") as fobj:
+				for myline in fobj:
+					mytempfilecontentholdinglist.append(myline.strip())
+			mystartdate+=timedelta(days=1)
+		#all date between startdate and enddate is in mytempfilecontentholdinglist, line list
+		for myline  in mytempfilecontentholdinglist:
+			mystoreddatetime=myline.split(":")[0]
+			mystoredsensor=myline.split(":")[1]
+			mystoredsensorvalue=myline.split(":")[2]
+			if (datetime.strptime(mystoreddatetime,"%Y-%m-%d %H-%M-%S")>datetime.strptime(starttime,"%Y-%m-%d %H-%M-%S")):
+				for sensorid in vars:
+					if (mystoredsensor==sensorid):
+						mytempdataholdingdict[sensorid].append(mystoreddatetime+":"+mystoredsensorvalue)
+		#now all data is in the dictionary. Take one sensor at a time and return the data in number of datapoint chunks
+		#for multiple simultaneous plots - number of data points should be equal
+		print mytempdataholdingdict["t"][2]
+		for sensorid in vars:
+			mymessagetosend = sensorid+"#"
+			for element in mytempdataholdingdict[sensorid]:
+				mymessagetosend+=element
+				mymessagetosend+=","
+			for ws in clients:
+				ws.sendMessage(u'StoredData='+mymessagetosend.strip(","))
+	except Exception as e:
+			if hasattr(e, 'message'):
+				print(e.message)
+			else:
+				print(e)
+			pass
+		
 ###MAIN WEBSOCKET HANDLER - handle received messages, connecting and disconnecting clients
 class SimpleChat(WebSocket):
 	def handleMessage(self):
 		for client in clients:
 			#if client != self:
 			#	client.sendMessage(self.address[0] + u' - ' + self.data)
-			if (self.data.split("-")[0]=="COMMAND"): #commands sent to server as COMMAND-MOTOR=ON
+			if (self.data.split("#")[0]=="COMMAND"): #commands sent to server as COMMAND-MOTOR=ON
 				#commandhandler(self.data.split("-")[1])
 				commandQ.append(self.data.split("-")[1])
-			elif (self.data.split("-")[0]=="STOREDDATA"): #Send last hour data on request as opposed to at the time of initial connection - improves UX. Send request from client as STOREDDATA-3600 for last 3600 seconds data 
+			elif (self.data.split("#")[0]=="STOREDDATA"): #Send last hour data on request as opposed to at the time of initial connection - improves UX. Send request from client as STOREDDATA-3600 for last 3600 seconds data 
 				#self.sendMessage(u'StoredData-'+str(plotcharts("./sensordata",(time.time()-int(self.data.split("-")[1])),time.time(),"P","p")))
 				try:
 					print "req for stored data "
 					#req for plotting will come with sensor, to and from time. 
-					#self.sendMessage(u'StoredData-'+str(plotcharts(self.data.split("-")[1],float(self.data.split("-")[2]),float(self.data.split("-")[3]),str(self.data.split("-")[4]))))
+					sendstoreddata(self.data.split("#")[1],self.data.split("#")[2],self.data.split("#")[3],self.data.split("#")[4])
 				except Exception as e:
 					if hasattr(e, 'message'):
 						print(e.message)
@@ -314,7 +352,7 @@ def TCPserverthread():
 		client_sock, address = TCPserverthread.srvr.accept()
 		#print 'Accepted connection from {}:{}'.format(address[0], address[1])
 		client_handler = Thread(
-			target=worker_sensorthread,
+			target=tcp_sensorthread,
 			args=(client_sock,)  # without comma you'd get a... TypeError: handle_client_connection() argument after * must be a sequence, not _socketobject
 		)
 		client_handler.start()
