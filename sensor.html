@@ -766,7 +766,8 @@
         <label class = "genericlabels">From</label><input type="datetime-local" id="plotfromthistime">
         <label class = "genericlabels">To</label><input type="datetime-local" id="plottothistime">
         <br>
-        <input type="button" id="buildplotrequestandexecute" value="Plot" onclick="plotchart()">
+        <input type="button" id="buildplotrequestandexecute" value="GetData" onclick="getdataforchart('t,A,a')">
+        <input type="button" id="buildplotrequestandexecute" value="Plot" onclick="plotchart('t,A,a')">
         </div> 
 			
 			<div class="col-12">
@@ -786,25 +787,8 @@
 			<script type="text/javascript">
                 
                 //global arrays for plotting graphs
-                var tx=[];//time
-                var ty=[];//val
-                var Bx=[];
-                var By=[];
-                var Cx=[];
-                var Cy=[];
-                var Dx=[];
-                var Dy=[];
-                var Ex=[];
-                var Ey=[];
-                var Ax=[];
-                var Ay=[];
-                var ax=[];
-                var ay=[];
-                var Vx=[];
-                var Vy=[];
-                var vx=[];
-                var vy=[];
-                
+
+                var mylistofarrays={};
                 function handlesensordata(data) 
 	
 			/* This function sets the displays with updated values*/
@@ -812,9 +796,9 @@
   
          
            var mystring=data; 
-           /*mystring  format will be 02/20/2021|21-04-33:t:-1.09 or 02/20/2021|21-04-33:V:4465  or 02/20/2021|21-04-33:B: 99.9     */   
+           /*mystring  format will be 02/20/2021 21:04:33|t|-1.09 or 02/20/2021 21:04:33|V|4465  or 02/20/2021 21:04:33|B| 99.9     */   
         
-          var arr2 = mystring.split(":"); /* arr2[0]=02/20/2021|21-04-33 and arr2[1]=t arr2[2]=-1.09 */
+          var arr2 = mystring.split("|"); /* arr2[0]=02/20/2021 21:04:33 and arr2[1]=t arr2[2]=-1.09 */
     try {
             
             document.getElementById(arr2[1]).value = arr2[2];
@@ -830,9 +814,9 @@ catch(err) {
             }
                 
 function handlestoreddata(data){
-    //a#2021-02-25 18-05-55:-4.09,2021-02-25 18-06-21:-1.10,2021-02-25 18-06-56:20.09
+    //a#2021-02-25 18:05:55|-4.09,2021-02-25 18:06:21|-1.10,2021-02-25 18:06:56|20.09
     //split the data and push it into corresponding arrays and then draw the plots
-    var mylistofarrays={};
+   
     
     var mystring=data;
     var mylocalarray=mystring.split("#");
@@ -840,26 +824,56 @@ function handlestoreddata(data){
     mylistofarrays [mylocalarray[0]+"y"]=[];
     var mylocalarray1 = mylocalarray[1].split(",");
     for(i=0;i<mylocalarray1.length;i++){
-    mylistofarrays [mylocalarray[0]+"x"].push(mylocalarray1[i].split(":")[0]);
-    mylistofarrays [mylocalarray[0]+"y"].push(mylocalarray1[i].split(":")[1]);
+    mylistofarrays [mylocalarray[0]+"x"].push(mylocalarray1[i].split("|")[0]);
+    mylistofarrays [mylocalarray[0]+"y"].push(mylocalarray1[i].split("|")[1]);
     }
-console.log(mylistofarrays [mylocalarray[0]+"x"]) ;  
-console.log(mylistofarrays [mylocalarray[0]+"y"]) ;  
 
 
      
-  window.PLOTLYENV=window.PLOTLYENV || {};
-    window.PLOTLYENV.BASE_URL="https://plot.ly";
-    Plotly.newPlot("9ab6bde0-5a69-4f53-a80c-d2e19447d850", [{"y": mylistofarrays [mylocalarray[0]+"y"], "x": mylistofarrays [mylocalarray[0]+"x"], "type": "scatter", "name": "Tank 1","mode":"markers"}], {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "Export to plot.ly", "showLink": false})
- ;
+
 
 }
-        
+       
+                function getdataforchart(variablestoget){
+                    var myparams=variablestoget.split(",");
+                    var myparamstosend="";
+                    for (i=0;i<myparams.length;i++){
+                        myparamstosend+="#";
+                        myparamstosend+=myparams[i];
+                        
+                    }
+                    doSend("STOREDDATA#2021-02-27 00:25:52#2021-02-27 01:32:52"+myparamstosend)
+                }
 
-      function plotchart(){
+      function plotchart(variablestoget){
+          var myparams=variablestoget.split(",");
+          var paramsforplotly=[];
+         for (i=0;i<myparams.length;i++){
+            
+                
+             var myobj = {
+                    y: mylistofarrays [myparams[i]+"y"], 
+                    x: mylistofarrays [myparams[i]+"x"], 
+                    type: "scatter", 
+                    name: myparams[i],
+                    mode:"markers"
+                };
+            paramsforplotly.push(myobj);
+             
+                      
+                       
+                    }
           
-          doSend("STOREDDATA#2021-02-26 09-47-52#2021-02-26 10-47-52#t");
-      }    
+   Plotly.newPlot("9ab6bde0-5a69-4f53-a80c-d2e19447d850",paramsforplotly, {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "E", "showLink": false})
+ ;
+      }
+      
+    
+      
+/*      window.PLOTLYENV=window.PLOTLYENV || {};window.PLOTLYENV.BASE_URL="https://plot.ly";Plotly.newPlot("9ab6bde0-5a69-4f53-a80c-d2e19447d850", [{"y": tracePy, "x": tracePx, "type": "scatter", "name": "Tank 1","mode":"markers"}, {"y": tracepy, "x": tracepx, "type": "scatter", "name": "Tank 2","mode":"markers"}], {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "Export to plot.ly", "showLink": false})
+ };*/
+      
+         
           
           
     
