@@ -196,43 +196,6 @@ def savesensordatatofile(formattedsensordata):
 	fobj.write(formattedsensordata)
 	fobj.write('\n')
 	fobj.close()
-### This function can return chunks of data from the saved sensordata file - useful for plotting by clients - not in use as of 2/19/18
-def plotcharts(inputfile,starttime,endtime,*vars):
-	try:
-		for k in vars:
-			mydict["x"+k]=[] # define the x and y variable lists
-			mydict["y"+k]=[]
-		frobj = open(inputfile, 'r') # input file has data in the form of 1480055273.46,T21.06
-		#Modified in order for it to work with saving Tanklevel instead of raw values (1/6/18)
-		#nOW - inputfile has data in the form of 1516156620.4,P 4.0\n
-		#1/21/18 - WILL NOT WORK with new format of saving 1516156620.4,P 4.0,B5000\n
-		#1/21/18 - modified - will work with new format
-		for line in frobj: # read the input file line by line
-			# line.split results in a list split at comma
-			step1=line.split(",") # step1[0]=1516156620.4 step1[1]=P 4.0 step1[2]=B5000
-			#-1 is the index from the right = last object in the list.
-			# strip removes leading and trailing characters, 
-			step2_1=str(step1[1]).strip()
-			step2_2=str(step1[2]).strip()
-			#[:1] gives the the ?2nd character P,T,L or B [1:] gives anything after ?2nd char
-			for variable in vars:
-				if (step2_1[:1]==variable):
-					if endtime > float(step1[0]) > starttime:
-					#Convert unix epoh time to human readable time
-						mydict["x"+variable].append(datetime.datetime.fromtimestamp(float(step1[0])).strftime('%Y-%m-%d %H:%M:%S'))
-						mydict["y"+variable].append(step2_1[1:])
-				elif (step2_2[:1]==variable):
-					if endtime > float(step1[0]) > starttime:
-					#Convert unix epoh time to human readable time
-						mydict["x"+variable].append(datetime.datetime.fromtimestamp(float(step1[0])).strftime('%Y-%m-%d %H:%M:%S'))
-						mydict["y"+variable].append(step2_2[1:])
-		return mydict
-	except Exception as e:
-		if hasattr(e, 'message'):
-			print(e.message)
-		else:
-			print(e)
-
 #Request for plot will come as which sensor, starttime, stoptime.
 #open the file with name sensordata+startdate name, read lines, seek until time is >time from starttime
 #read line by line - if sensor matches the sensor requested - push the time and value data in the list
@@ -254,9 +217,10 @@ def sendstoreddata(data):
 	try:
 		
 		while (myendtimedatetimeformat.date()>=mystartdate):
-			with open("sensordata"+str(mystartdate),"r") as fobj:
-				for myline in fobj:
-					mytempfilecontentholdinglist.append(myline.strip())
+			if os.path.exists("sensordata"+str(mystartdate)):
+				with open("sensordata"+str(mystartdate),"r") as fobj:
+					for myline in fobj:
+						mytempfilecontentholdinglist.append(myline.strip())
 			mystartdate+=timedelta(days=1)
 		#all date between startdate and enddate is in mytempfilecontentholdinglist, line list
 		for myline  in mytempfilecontentholdinglist:
@@ -295,7 +259,6 @@ class SimpleChat(WebSocket):
 			elif (self.data.split("#")[0]=="STOREDDATA"): #Send last hour data on request as opposed to at the time of initial connection - improves UX. Send request from client as STOREDDATA-3600 for last 3600 seconds data 
 				#self.sendMessage(u'StoredData-'+str(plotcharts("./sensordata",(time.time()-int(self.data.split("-")[1])),time.time(),"P","p")))
 				try:
-					print "req for stored data "
 					#req for plotting will come with sensor, to and from time. 
 					sendstoreddata(self.data)
 				except Exception as e:

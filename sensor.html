@@ -544,13 +544,16 @@
 			
 			function onOpen(evt)
 			{
-				console.log("connected\n");
+				document.getElementById("serverlight").style.backgroundColor="lawngreen";
+                console.log("connected\n");
+                
 				
 			}
 			
 			function onClose(evt)
 			{
-				console.log("disconnected\n");
+				document.getElementById("serverlight").style.backgroundColor="red";
+                console.log("disconnected\n");
 				
 			}
 			function onMessage(evt)
@@ -567,29 +570,6 @@
 					break;
 					case 'StoredData':
 					handlestoreddata(arrdata[1]);
-					break;
-					case 'STATUS':
-					queryServer4(arrdata[1]);
-					break;
-					case 'POWERDATA':
-					queryServer4(arrdata[1]);
-					break;
-					case 'SETTINGS':
-					queryServer5(arrdata[1]);
-					break;
-					case 'MANUAL':
-					queryServer6(arrdata[1]);
-					break;
-					/*    This one is for plotting the current and voltage ADCs*/
-					case 'RawADC':
-					queryServer7(arrdata[1]);
-					break;
-					case 'CAL':
-					queryServer8(arrdata[1]);
-					break;
-					/*           This one is for raw RMS ADC data and raw sensor data*/
-					case 'raw':
-					queryServer9(arrdata[1]);
 					break;
 					default:
 					console.log(arrdata[0].slice(-1));
@@ -635,9 +615,10 @@
 				</script>
 	</head>
 	<!--<body onload="queryServer3()"> -->
-	<body style="margin:0;">
+	<body style="margin:0;" onload="setbuttonstatus()">
 
-			<div class = "sensors col-6">
+		<button class="serverlight" id="serverlight" style="background-color: red;">Server</button>	
+        <div class = "sensors col-6">
                 <table>
                     <tr>
                         <td class="sensorlabel">
@@ -747,52 +728,51 @@
                     </tr>
                 </table>
         </div>
-        <datalist id="listofsensors">
         
-            <option value="Outside Temp">
-            <option value="Outside Battery">
-            <option value="Inside Temp1">
-            <option value="Inside Temp2">
-            <option value="Moisture 1">
-            <option value="Moisture 2">
-            <option value="Moisture 3">
-            <option value="Moisture 4">
-            <option value="Distance 2">
-            <option value="Distance 2 battery">
-        </datalist>
+
         <div class = "col-12 selectsensorsforplot">
-        <input type="text" list="listofsensors"> <input type="button" id="addtosensorslisttoplot" value="Add">
-        <p class="genericparagraph" id="listofsensorsaddedforplotting">Empty</p>
+        <!--<input type="text" list="listofsensors" id="listofsensorstoadd"> -->
+                <label for="listofsensorstoadd">Add/Remove Sensors to plot</label>
+        <select name="Sensors to plot" id="listofsensorstoadd">
+
+            <option id="opt-t" value="t">Outside Temp</option>
+            <option id="opt-V" value="V">Outside Battery</option>
+            <option id="opt-A" value="A">Inside Temp1</option>
+            <option id="opt-a" value="a">Inside Temp2</option>
+            <option id="opt-B" value="B">Moisture 1</option>
+            <option id="opt-C" value="C">Moisture 2</option>
+            <option id="opt-D" value="D">Moisture 3</option>
+            <option id="opt-E" value="E">Moisture 4</option>
+            <option id="opt-2" value="2">Distance 2</option>
+            <option id="opt-v" value="v">Distance 2 battery</option>
+    </select>    
+        <input type="button" id="addtosensorslisttoplot" onclick ="paramconstructor()" value="Add">
+        <input type="button" id="addtosensorslisttoplot" onclick ="paramremover()" value="remove">
+        <p class="genericparagraph" id="listofsensorsaddedforplotting"></p>
+        <p class="genericparagraph" id="localdataofsensorsavailableforplotting"></p>
         <label class = "genericlabels">From</label><input type="datetime-local" id="plotfromthistime">
         <label class = "genericlabels">To</label><input type="datetime-local" id="plottothistime">
         <br>
-        <input type="button" id="buildplotrequestandexecute" value="GetData" onclick="getdataforchart('t,A,a')">
-        <input type="button" id="buildplotrequestandexecute" value="Plot" onclick="plotchart('t,A,a')">
+        <input type="button" id="buildplotrequest" value="GetData" onclick="getdataforchart()">
+        <input type="button" id="plotexecute" value="Plot" onclick="plotchart()">
+        <button class="genericbuttons" id="removeplots" onclick="clearplots()">Clear Plots</button>	
         </div> 
-			
-			<div class="col-12">
-				<!--        plot # 1 space-->
-				<div id="9ab6bde0-5a69-4f53-a80c-d2e19447d850" class="plotly-graph-div"></div>
-			</div>
-			<div class="col-12">
-				<!--          plot #2 space-->
-				<div id="9ab6bde0-5a69-4f53-a80c-d2e19447d851" class="plotly-graph-div"></div>
-			</div>
-			<div class="col-12">
-				<!--        plot #3 space-->
-				
-				<div id="9ab6bde0-5a69-4f53-a80c-d2e19447d852" class="plotly-graph-div"></div>
-			</div>
-        	</body>
-			<script type="text/javascript">
-                
-                //global arrays for plotting graphs
 
-                var mylistofarrays={};
-                function handlesensordata(data) 
-	
-			/* This function sets the displays with updated values*/
-{
+        	</body>
+<script type="text/javascript">
+//global arrays for plotting graphs
+var mylistofarrays={};
+// old list of sensors to plot element;
+var mylistofoldchild={};
+var plotidarray=[];
+var plotcounter=0;
+/*This function sets the status of buttons on load*/
+function setbuttonstatus(){
+    document.getElementById("removeplots").disabled=true;
+document.getElementById("plotexecute").disabled=true;
+}
+/* This function handles the received data from server sets the displays with updated values*/
+function handlesensordata(data) {
   
          
            var mystring=data; 
@@ -812,7 +792,7 @@ catch(err) {
 
                   
             }
-                
+/* This function handles the stored data received from server fills the arrays for plotting*/      
 function handlestoreddata(data){
     //a#2021-02-25 18:05:55|-4.09,2021-02-25 18:06:21|-1.10,2021-02-25 18:06:56|20.09
     //split the data and push it into corresponding arrays and then draw the plots
@@ -828,13 +808,79 @@ function handlestoreddata(data){
     mylistofarrays [mylocalarray[0]+"y"].push(mylocalarray1[i].split("|")[1]);
     }
 
-
-     
+var myavailabledata = document.getElementById("localdataofsensorsavailableforplotting").innerHTML;
+    myavailabledata+=mylocalarray[0];
+    myavailabledata+=",";
+    document.getElementById("plotexecute").disabled=false;
+    document.getElementById("buildplotrequest").disabled=false;
 
 
 }
        
-                function getdataforchart(variablestoget){
+/*This function adds to the list of sensors to get data for and to plot for*/             
+function paramconstructor(){
+       var alreadyaddedsensors= document.getElementById("listofsensorsaddedforplotting").innerHTML;
+        var sensortoadd=document.getElementById("listofsensorstoadd").value;
+        if (sensortoadd==""){
+            console.log("nothing to add")
+            
+        }
+        else {
+        if (alreadyaddedsensors==""){
+        
+        alreadyaddedsensors+=sensortoadd;
+    }
+        else
+            {
+                alreadyaddedsensors+=",";
+                alreadyaddedsensors+=sensortoadd;
+            }
+        
+        document.getElementById("listofsensorsaddedforplotting").innerHTML=alreadyaddedsensors
+        
+       //remove the option already added from the datalist
+        mylistofoldchild ["oldchild"+sensortoadd] =document.getElementById("opt-"+sensortoadd);
+        document.getElementById("listofsensorstoadd").removeChild(mylistofoldchild ["oldchild"+sensortoadd]);
+        
+    } 
+    }
+                
+/*This function removes from the list of sensors to get data for and to plot for*/                 
+function paramremover(){
+       var alreadyaddedsensors= document.getElementById("listofsensorsaddedforplotting").innerHTML;
+    if (alreadyaddedsensors==""){
+        console.log("nothing to remove");
+    }
+        else
+            {
+                var mycurrentlyaddedsensorlist=alreadyaddedsensors.split(",");
+                var newsensorlist="";
+                document.getElementById("listofsensorsaddedforplotting").innerHTML="";
+                for (i=0;i<mycurrentlyaddedsensorlist.length-1;i++)
+                    {
+                        newsensorlist+=mycurrentlyaddedsensorlist[i];
+                        newsensorlist+=","
+                    }
+                document.getElementById("listofsensorsaddedforplotting").innerHTML=newsensorlist.slice(0,-1);
+                //add it back to the datalist
+                document.getElementById("listofsensorstoadd").appendChild(mylistofoldchild ["oldchild"+mycurrentlyaddedsensorlist[mycurrentlyaddedsensorlist.length-1]]);
+            
+            }
+        
+        
+        
+    }             
+/*This function requests stored data from server*/ 
+function getdataforchart(){
+                    var variablestoget=document.getElementById("listofsensorsaddedforplotting").innerHTML;
+                    var fromtime = returnformattedtime(document.getElementById("plotfromthistime").value);
+                     var totime = returnformattedtime(document.getElementById("plottothistime").value);
+                    
+    if ((variablestoget == "")|| (document.getElementById("plotfromthistime").value=="")|| (document.getElementById("plottothistime").value=="")) {
+        console.log("missing request params");
+        
+    }
+    else {
                     var myparams=variablestoget.split(",");
                     var myparamstosend="";
                     for (i=0;i<myparams.length;i++){
@@ -842,11 +888,23 @@ function handlestoreddata(data){
                         myparamstosend+=myparams[i];
                         
                     }
-                    doSend("STOREDDATA#2021-02-27 00:25:52#2021-02-27 01:32:52"+myparamstosend)
+                    doSend("STOREDDATA#"+fromtime+"#"+totime+myparamstosend);
+                    //waiting for data to arrive from server. Prevent plotting or sending another request.
+                    document.getElementById("plotexecute").disabled=true;
+                    document.getElementById("buildplotrequest").disabled=true;
                 }
+}
+/*This function plots the chart based on data loaded in the arrays by getdataforchart and sensor list*/ 
+function plotchart(){
+          var variablestoget=document.getElementById("listofsensorsaddedforplotting").innerHTML;
+    if (variablestoget == "") {
+        console.log("missing plot params");
+        
+    }
 
-      function plotchart(variablestoget){
-          var myparams=variablestoget.split(",");
+    else {      
+    
+    var myparams=variablestoget.split(",");
           var paramsforplotly=[];
          for (i=0;i<myparams.length;i++){
             
@@ -863,24 +921,56 @@ function handlestoreddata(data){
                       
                        
                     }
-          
-   Plotly.newPlot("9ab6bde0-5a69-4f53-a80c-d2e19447d850",paramsforplotly, {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "E", "showLink": false})
+          var newdiv=document.createElement("Div");
+          newdiv.setAttribute("id","abcdefgh"+plotcounter);
+            
+          newdiv.setAttribute("class","plotly-graph-div col-12");
+          document.body.appendChild(newdiv);
+   Plotly.newPlot("abcdefgh"+plotcounter,paramsforplotly, {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "E", "showLink": false})
  ;
-      }
-      
+    plotidarray.push(plotcounter); 
+    plotcounter=plotcounter+1;
+    document.getElementById("removeplots").disabled=false;
+    }
+}
+/* clear all the plots and remove all the data from arrays*/
+function clearplots(){
+    mylistofarrays={};
+    document.getElementById("localdataofsensorsavailableforplotting").innerHTML="";
+    mylengthofarray=plotidarray.length;
+    for (i=0;i<mylengthofarray;i++){
+        mychild=document.getElementById("abcdefgh"+plotidarray[i]);
+        document.body.removeChild(mychild);
+        
+        
+    }
+document.getElementById("removeplots").disabled=true;
+document.getElementById("plotexecute").disabled=true;
+    plotidarray=[];
+    plotcounter=0;
+}
     
-      
-/*      window.PLOTLYENV=window.PLOTLYENV || {};window.PLOTLYENV.BASE_URL="https://plot.ly";Plotly.newPlot("9ab6bde0-5a69-4f53-a80c-d2e19447d850", [{"y": tracePy, "x": tracePx, "type": "scatter", "name": "Tank 1","mode":"markers"}, {"y": tracepy, "x": tracepx, "type": "scatter", "name": "Tank 2","mode":"markers"}], {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "Export to plot.ly", "showLink": false})
- };*/
-      
-         
-          
-          
-    
-				</script>
-			<script type="text/javascript">
+/* As the name suggest - this function returns time formatted as %Y-%m-%d %H:%M:%S */
+function returnformattedtime(mytime){
+            var response=mytime;
+            var date = new Date(response);
+            var hours = date.getHours();
+
+            var minutes = "0" + date.getMinutes();
+
+            var seconds = "0" + date.getSeconds();
+            var year    = date.getFullYear();
+            var month   = date.getMonth()+1;
+            var day     = date.getDate();
+
+
+            var formattedTime =year+'-'+month+'-'+day+' '+ hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            /*var formattedTime =day+'-'+month+'-'+year+' '+ hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2); */
+
+        return formattedTime;          
+    } 
 				
-				/*window.removeEventListener("resize");*/
+                /*window.removeEventListener("resize");*/
 				window.addEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d850"));});
 				window.removeEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d850"));});
 				
