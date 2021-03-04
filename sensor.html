@@ -921,16 +921,18 @@ function plotchart(){
                       
                        
                     }
+        var newdivid="abcdefgh"+plotcounter;
           var newdiv=document.createElement("Div");
-          newdiv.setAttribute("id","abcdefgh"+plotcounter);
+          newdiv.setAttribute("id",newdivid);
             
           newdiv.setAttribute("class","plotly-graph-div col-12");
           document.body.appendChild(newdiv);
    Plotly.newPlot("abcdefgh"+plotcounter,paramsforplotly, {"xaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}, "yaxis": {"ticks": "outside", "tickwidth": 4, "tick0": 0, "ticklen": 8, "dtick": 0.25, "tickcolor": "#000", "autotick": true}}, {"linkText": "E", "showLink": false})
  ;
     plotidarray.push(plotcounter); 
-    plotcounter=plotcounter+1;
     document.getElementById("removeplots").disabled=false;
+    window.addEventListener("resize", function(){Plotly.Plots.resize(document.getElementById(newdivid));});
+    plotcounter=plotcounter+1;
     }
 }
 /* clear all the plots and remove all the data from arrays*/
@@ -939,6 +941,7 @@ function clearplots(){
     document.getElementById("localdataofsensorsavailableforplotting").innerHTML="";
     mylengthofarray=plotidarray.length;
     for (i=0;i<mylengthofarray;i++){
+        	window.removeEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("abcdefgh"+plotidarray[i]));});
         mychild=document.getElementById("abcdefgh"+plotidarray[i]);
         document.body.removeChild(mychild);
         
@@ -970,15 +973,11 @@ function returnformattedtime(mytime){
         return formattedTime;          
     } 
 				
-                /*window.removeEventListener("resize");*/
-				window.addEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d850"));});
-				window.removeEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d850"));});
+         
+
+			
 				
-				window.addEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d851"));});
-				window.removeEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d851"));});
-				
-				window.addEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d852"));});
-				window.removeEventListener("resize", function(){Plotly.Plots.resize(document.getElementById("9ab6bde0-5a69-4f53-a80c-d2e19447d852"));});
+
 				
 				</script>
 		

@@ -31,7 +31,9 @@ char vcc[5];//4653
 char blankvcc[5]={'-','-','-','-','\0'};
 char blanktempOUT[6]={'-','-','-','-','-','\0'};
 char got_time[16]; //an Array of 16 bytes - since the payload size is 16 bytes
+char mysettings[16];
 float moist1,moist2,moist3,moist4;
+float rawmoist1adc,rawmoist2adc,rawmoist3adc, rawmoist4adc;
 //Max min usable ADC values for moisture sensors
 //Plan to update/calibrate dynamically via another pipe on the radio
 float max1=1023.0;
@@ -159,22 +161,29 @@ delay(10);
 //Temp will be float data. Moistures will be 0-100. raw ADC 1023 is dry, 0 is wet
 //Temp in1 prefix A, temp in2 prefix a
 //Moist 1 prefix B, moist 2 prefix C, Moist 3 prefix D
-  moist1 = ((max1 - analogRead(MoisturePIN1))*100)/(max1-min1);
-  delay(1);
-  moist2 = ((max2 - analogRead(MoisturePIN2))*100)/(max2-min2);
-  delay(1);
-  moist3 = ((max3 - analogRead(MoisturePIN3))*100)/(max3-min3);
-  delay(1);
-  moist4 = ((max4 - analogRead(MoisturePIN4))*100)/(max4-min4);
-  delay(1);
+  rawmoist1adc =analogRead(MoisturePIN1);
+  moist1 = ((max1 - rawmoist1adc)*100)/(max1-min1);
+  delay(20);
+
+  rawmoist2adc=analogRead(MoisturePIN2);
+  moist2 = ((max2 - rawmoist2adc)*100)/(max2-min2);
+  delay(20);
+
+  rawmoist3adc=analogRead(MoisturePIN3);
+  moist3 = ((max3 - rawmoist3adc)*100)/(max3-min3);
+  delay(20);
+
+  rawmoist4adc=analogRead(MoisturePIN4);
+  moist4 = ((max4 - rawmoist4adc)*100)/(max4-min4);
+  delay(20);
   char moistdatastr1[16]={'B'};
-  dtostrf(moist1,6, 1, moistdatastr1+1);//B-100.0 - max space needed = 7 chars per read
+  dtostrf(rawmoist1adc,6, 1, moistdatastr1+1);//B-100.0 - max space needed = 7 chars per read
   moistdatastr1[7]={'C'};
-  dtostrf(moist2,6, 1, moistdatastr1+8); //B-999.9C-999.9 = 14 chars. 
+  dtostrf(rawmoist2adc,6, 1, moistdatastr1+8); //B-999.9C-999.9 = 14 chars. 
   char moistdatastr2[16]={'D'};
-  dtostrf(moist3,6, 1, moistdatastr2+1);
+  dtostrf(rawmoist3adc,6, 1, moistdatastr2+1);
   moistdatastr2[7]={'E'};
-  dtostrf(moist4,6, 1, moistdatastr2+8); //D-999.9E-999.9 = 14 chars. 
+  dtostrf(rawmoist4adc,6, 1, moistdatastr2+8); //D-999.9E-999.9 = 14 chars. 
  //char array for temp data
   char mytempstr[16]={'A'};
   float temp1,temp2;
@@ -264,8 +273,8 @@ void loop() {
         }
         if (onwhichpipedatawasreceived ==1){
         //data received on config pipe. Config to be sent as 16 bytes - 2 bytes max/2 bytes min - 4bytes per sensor x 4 sensors = 16 bytes
-        radio.read( got_time, 16 );             // Get the payload
-        handleconfig(got_time);
+        radio.read( mysettings, 16 );             // Get the payload
+        handleconfig(mysettings);
       }
         
   

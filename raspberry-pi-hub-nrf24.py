@@ -89,7 +89,7 @@ PONG = 0xA
 #WebSocket clients
 clients = []
 
-
+mylocationdir="/home/pi/Downloads/"
 
 #Maximum number of websocket clients allowed to connect simultaneously = NUMofWebSocketClientsAllowed
 NUMofWebSocketClientsAllowed=2
@@ -153,7 +153,7 @@ def checkfordataintegrity(receivedsensorvalue):
 	if not (re.match("[A|V|B|D][\s\-0-9]{1,3}.+[a|C|E|t][\s\-0-9]{1,3}[\.0-9]",receivedsensorvalue)):
 		return False
 	for char in receivedsensorvalue:
-		if not (re.match("[a-zA-Z0-9\-\.\s\:]",char)):#re.match only looks at the 1st position. look for all the chars which should be there - for each char in the recvd data. If any outside the expected vals - return false.
+		if not (re.match("[a-zA-Z0-9\-\.\s\x00]",char)):#re.match only looks at the 1st position. look for all the chars which should be there - for each char in the recvd data. If any outside the expected vals - return false.
 			return False
 	return True
 def nrf_sensorthread():
@@ -183,6 +183,8 @@ def nrf_sensorthread():
 			if checkfordataintegrity(rawsensorvalue):
 				savesensordatatofile(sensorvalue[1]+"|"+sensorvalue[2])
 				savesensordatatofile(sensorvalue[3]+"|"+sensorvalue[4])
+			else:
+				print recv_buffer
 		except Exception as e:
 			if hasattr(e, 'message'):
 				print(e.message)
@@ -190,7 +192,7 @@ def nrf_sensorthread():
 				print(e)
 			pass
 def savesensordatatofile(formattedsensordata):
-	fobj = open("sensordata"+str(date.today()), 'a+')
+	fobj = open(mylocationdir+"sensordata"+str(date.today()), 'a+')
 	fobj.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 	fobj.write("|")
 	fobj.write(formattedsensordata)
@@ -205,39 +207,29 @@ def savesensordatatofile(formattedsensordata):
 #return data as "t$2021-02-20 21:04:33|-1.09,2021-02-20 21:04:41|-1.08,"
 def sendstoreddata(data):
 	vars=[]
-	mydatapointcounter=0
 	mytempdataholdingdict={} #get all the data in a list and send it to javascript in chunks of "numberofdatapoints" length
-	mytempfilecontentholdinglist=[]
 	mystarttimedatetimeformat=datetime.strptime(data.split("#")[1],"%Y-%m-%d %H:%M:%S")
 	myendtimedatetimeformat=datetime.strptime(data.split("#")[2],"%Y-%m-%d %H:%M:%S")
 	mystartdate=mystarttimedatetimeformat.date()
 	vars=data.split('#')[3:]
 	for sensorid in vars:
-		mytempdataholdingdict[sensorid]=[]
+		mytempdataholdingdict[sensorid]=""
 	try:
-		
 		while (myendtimedatetimeformat.date()>=mystartdate):
-			if os.path.exists("sensordata"+str(mystartdate)):
-				with open("sensordata"+str(mystartdate),"r") as fobj:
+			if os.path.exists(mylocationdir+"sensordata"+str(mystartdate)):
+				with open(mylocationdir+"sensordata"+str(mystartdate),"r") as fobj:
 					for myline in fobj:
-						mytempfilecontentholdinglist.append(myline.strip())
+						myline=myline.strip()
+						mystoreddatetime=myline.split("|")[0]
+						mystoredsensor=myline.split("|")[1]
+						mystoredsensorvalue=myline.split("|")[2]
+						if (datetime.strptime(mystoreddatetime,"%Y-%m-%d %H:%M:%S")>mystarttimedatetimeformat):
+							for sensorid in vars:
+								if (mystoredsensor==sensorid):
+									mytempdataholdingdict[sensorid]+=mystoreddatetime+"|"+mystoredsensorvalue+","
 			mystartdate+=timedelta(days=1)
-		#all date between startdate and enddate is in mytempfilecontentholdinglist, line list
-		for myline  in mytempfilecontentholdinglist:
-			mystoreddatetime=myline.split("|")[0]
-			mystoredsensor=myline.split("|")[1]
-			mystoredsensorvalue=myline.split("|")[2]
-			if (datetime.strptime(mystoreddatetime,"%Y-%m-%d %H:%M:%S")>mystarttimedatetimeformat):
-				for sensorid in vars:
-					if (mystoredsensor==sensorid):
-						mytempdataholdingdict[sensorid].append(mystoreddatetime+"|"+mystoredsensorvalue)
-		#now all data is in the dictionary. Take one sensor at a time and return the data in number of datapoint chunks
-		#for multiple simultaneous plots - number of data points should be equal
 		for sensorid in vars:
-			mymessagetosend = sensorid+"#"
-			for element in mytempdataholdingdict[sensorid]:
-				mymessagetosend+=element
-				mymessagetosend+=","
+			mymessagetosend = sensorid+"#"+mytempdataholdingdict[sensorid]
 			for ws in clients:
 				ws.sendMessage(u'StoredData='+mymessagetosend.strip(","))
 	except Exception as e:
