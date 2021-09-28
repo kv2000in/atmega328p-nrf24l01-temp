@@ -13,8 +13,8 @@
 #define DigitalSwitchTemp 4
 #define DigitalSwitchReg 5
 #define ThermistorPIN 0  
-
-              
+int HowManySleepCycles = 4;
+int currentsleepcycle = 0;              
 float pad = 9980; 
 byte myDDRB;
 byte myPORTB;
@@ -219,17 +219,22 @@ void loop(void)
   
 if(f_wdt == 1)
   {
+   currentsleepcycle++;
+    
+    if (currentsleepcycle>HowManySleepCycles){
     /* Do something */
    senddata();
 
    delay(10);
-    
+   currentsleepcycle=0; 
+    }
     /* Don't forget to clear the flag. */
     f_wdt = 0;
     
     /* Re-enter sleep mode. */
      enterSleep();
 
+  
   }
   else
   {

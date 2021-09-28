@@ -113,7 +113,7 @@ def master():
 		#myencodedbuf = mybuf.encode()
 		#mybytearray=bytearray(myencodedbuf)
 		#max min values to be sent as maxBminBmaxCminCmaxDminD 2 bytes each x 8 = 16 bytes
-		mymaxminvalues=[889,137,1000,200,900,300,1023,128]
+		mymaxminvalues=[1023,1,1023,1,1023,1,1023,1]
 		mybytearray=pack('<8H',*mymaxminvalues) #H = unsigned short 2 bytes <=little endian. create 8 short datasets
 		radio.write(mybytearray)
 		time.sleep(200/1000000.0)
@@ -173,7 +173,7 @@ def nrf_sensorthread():
 			time.sleep(1000000/1000000.0)		
 		recv_buffer = []
 		radio.read(recv_buffer)
-		rawsensorvalue=array.array('B',recv_buffer).tostring().strip('\x00')
+		rawsensorvalue=array.array('B',recv_buffer).tostring().strip('\x00\n')
 		sensorvalue=re.split(r'([a-z]|[A-Z])',rawsensorvalue) #"V4465t-3.91" becomes ['', 'V', '4465', 't', '-3.91'] ,"B  99.9 C  88.8" becomes ['', 'B', '  99.9 ', 'C', '  88.8'] 
 		SENSORTIME=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		try:
@@ -235,6 +235,8 @@ def sendstoreddata(data):
 	except Exception as e:
 			if hasattr(e, 'message'):
 				print(e.message)
+				for ws in clients:
+					ws.sendMessage(u'Error='+e.message)
 			else:
 				print(e)
 			pass
