@@ -20,7 +20,7 @@ unsigned long previousTxMillis = 0;
 // loop delay in milli seconds
 const long screen_refresh_interval = 1250;
 const long Tx_data_interval=30000;
-const long Rx_data_interval=60000;
+const long Rx_data_interval=300000;
 boolean toggle_2nd_row=true;
 #define DigitalSwitchforMoistureSensor 6
 int i = 0;
